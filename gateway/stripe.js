@@ -67,6 +67,16 @@ var createUser = function(payload, cb) {
 	], cb);
 };
 
+var addPaymentMethod = function(payload, cb) {
+	if (!stripe1) stripe1 = stripe(payload.security.api_key);
+	var data = {
+		source: payload.card
+	};
+	stripe1.customers.createSource(payload.user_token, data, function(err, card) {
+		cb(err, card);
+	});
+};
+
 /**
  * Adds new payment method to user
  * @param  {String}   source       	source which is provided by Stripe.js from the client
@@ -77,7 +87,9 @@ var createUser = function(payload, cb) {
 var createPaymentMethod = function(payload, cb) {
 	if (!stripe1) stripe1 = stripe(payload.security.api_key);
 	var data = {
-		source: {
+		source: // "card_199felKNkTdP9OMYViL4jKw0"
+		{
+			id: payload.card.id,
 			object: "card",
 			exp_month: payload.card.exp_month,
 			exp_year: payload.card.exp_year,
@@ -255,3 +267,4 @@ module.exports.statusTranslator = statusTranslator;
 module.exports.cardNumberFormat = cardNumberFormat;
 module.exports.delete_payment_method = delete_payment_method;
 module.exports.sale_extra_transaction = sale_extra_transaction;
+module.exports.addPaymentMethod = addPaymentMethod;

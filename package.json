@@ -1,10 +1,14 @@
 {
 	"name": "latam_payment",
-	"version": "1.0.84",
+	"version": "1.0.87",
 	"description": "Payment module for latam",
 	"main": "index.js",
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/diegobarrera/latam_payment.git"
 	},
 	"keywords": [
 		"payment"

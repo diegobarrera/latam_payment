@@ -13,6 +13,29 @@ function LatamPayment() {
 	return this;
 }
 
+LatamPayment.prototype.get_card_data = function(user_data, cb) {
+	var self = this;
+	var credentials = {
+		apiLogin: user_data.security.api_login,
+		apiKey: user_data.security.api_key
+	};
+	var payload = {
+		"payerId": user_data.metadata.id,
+		"creditCardTokenId": user_data.card,
+		"startDate": "2010-01-01T12:00:00",
+		"endDate": "2012-01-01T12:00:00"
+	};
+	var url = user_data.security.url;
+	payU.inverse_tokenization(url, payload, credentials, function(err, card_info) {
+		if (err) {
+			self.response.error = err;
+			self.response.success = false;
+		}
+		self.response.body = card_info;
+		cb(err, self.response);
+	});
+};
+
 LatamPayment.prototype.register = function(country, user_data, cb) {
 	var self = this;
 	try {
@@ -46,13 +69,13 @@ LatamPayment.prototype.register = function(country, user_data, cb) {
 			user_data.source = user_data.card;
 			var security = user_data.security;
 			if (user_data.user_token) {
-				stripe.createPaymentMethod(user_data, function(err, card_token) {
+				stripe.addPaymentMethod(user_data, function(err, card_token) {
 					if (err) {
 						self.response.success = false;
 						throw ("User was not created. " + err);
 					}
-					self.response.body.card = card_token.id;
-					self.response.body.fingerprint = card_token.fingerprint;
+					self.response.body = card_token;
+					self.response.body.user = user_data.user_token;
 					cb(err, self.response);
 				});
 			} else {
@@ -64,13 +87,15 @@ LatamPayment.prototype.register = function(country, user_data, cb) {
 					user_data.user_token = user_token;
 					self.response.body.user = user_token;
 					user_data.security = security;
-					stripe.createPaymentMethod(user_data, function(err, card_token) {
+					stripe.addPaymentMethod(user_data, function(err, card_token) {
 						if (err) {
 							self.response.success = false;
 							throw ("User was not created. " + err);
 						}
+						self.response.body = card_token;
+						self.response.body.user = user_token;
 						self.response.body.card = card_token.id;
-						self.response.body.fingerprint = card_token.fingerprint;
+						delete self.response.body.id;
 						cb(err, self.response);
 					});
 				});
@@ -147,6 +172,7 @@ LatamPayment.prototype.checkout = function(country, user_data, cb) {
 				if (err || charge.status !== 'succeeded') {
 					self.response.success = false;
 					self.response.error = err;
+					return cb(err, self.response);
 				}
 				self.response.body.transaction = charge.id;
 				return cb(err, self.response);

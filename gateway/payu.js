@@ -32,6 +32,32 @@ var calculateMD5Hash = function(data, cb) {
 	cb(response);
 };
 
+module.exports.inverse_tokenization = function(url, payload, credentials, cb) {
+	var data = {
+		"language": "es",
+		"command": "GET_TOKENS",
+		"merchant": credentials,
+		"creditCardTokenInformation": payload
+	};
+	request({
+		url: url,
+		method: 'POST',
+		headers: {
+			Accept: 'application/json',
+			'Content-Type': 'application/json'
+		},
+		json: true,
+		body: data
+	}, function(err, res, body) {
+		if (body && body.code === 'SUCCESS') {
+			cb(err, body.creditCardTokenList[0]);
+		} else {
+			err = err + " " + body.error;
+			cb(err, null);
+		}
+
+	});
+};
 
 module.exports.tokenize = function(url, data, country, cb) {
 	data.creditCardToken.name = unescape(encodeURIComponent(data.creditCardToken.name));
