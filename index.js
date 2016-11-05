@@ -33,10 +33,27 @@ LatamPayment.prototype.register = function(type, user_data, cb) {
 					self.response.error = err;
 					self.response.success = false;
 				}
-				self.response.body = card_info;
+				self.response.body = {
+					token: card_info.creditCardTokenId,
+					last4: card_info.maskedNumber.slice(-4),
+					cardType: card_info.paymentMethod,
+					maskedNumber: card_info.maskedNumber,
+					uniqueNumberIdentifier: card_info.identificationNumber,
+					customer: null
+				};
 				cb(err, self.response);
 			});
 		} else if (type === "stripe") { // use Stripe
+			function getStripeResponse(card_token) {
+				return {
+					token: card_token.card,
+					last4: card_token.last4,
+					cardType: card_token.brand,
+					maskedNumber: '****' + card_token.last4,
+					uniqueNumberIdentifier: card_token.fingerprint,
+					customer: card_token.customer
+				};
+			}
 			user_data.source = user_data.card;
 			var security = user_data.security;
 			if (user_data.user_token) {
@@ -45,8 +62,7 @@ LatamPayment.prototype.register = function(type, user_data, cb) {
 						self.response.success = false;
 						throw ("User was not created. " + err);
 					}
-					self.response.body = card_token;
-					self.response.body.user = user_data.user_token;
+					self.response.body = getStripeResponse(card_token);
 					cb(err, self.response);
 				});
 			} else {
@@ -63,10 +79,7 @@ LatamPayment.prototype.register = function(type, user_data, cb) {
 							self.response.success = false;
 							throw ("User was not created. " + err);
 						}
-						self.response.body = card_token;
-						self.response.body.user = user_token;
-						self.response.body.card = card_token.id;
-						delete self.response.body.id;
+						self.response.body = getStripeResponse(card_token);
 						cb(err, self.response);
 					});
 				});
