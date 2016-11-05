@@ -1,6 +1,5 @@
 'use strict';
 
-var request = require('request');
 var payU = require('./gateway/payu.js');
 var stripe = require('./gateway/stripe.js');
 
@@ -13,59 +12,52 @@ function LatamPayment() {
 	return this;
 }
 
-LatamPayment.prototype.get_card_data = function(user_data, cb) {
-	var self = this;
-	var credentials = {
-		apiLogin: user_data.security.api_login,
-		apiKey: user_data.security.api_key
-	};
-	var payload = {
-		"payerId": user_data.metadata.id,
-		"creditCardTokenId": user_data.card,
-		"startDate": "2010-01-01T12:00:00",
-		"endDate": "2012-01-01T12:00:00"
-	};
-	var url = user_data.security.url;
-	payU.inverse_tokenization(url, payload, credentials, function(err, card_info) {
-		if (err) {
-			self.response.error = err;
-			self.response.success = false;
-		}
-		self.response.body = card_info;
-		cb(err, self.response);
-	});
-};
-
-LatamPayment.prototype.register = function(country, user_data, cb) {
+LatamPayment.prototype.register = function(type, user_data, cb) {
 	var self = this;
 	try {
 		country = country.toUpperCase();
-		if (country === "COL") { // use PayU
-			var url = user_data.security.url;
-			var data = {
-				language: "es",
-				command: "CREATE_TOKEN",
-				merchant: {
-					apiLogin: user_data.security.api_login,
-					apiKey: user_data.security.api_key
-				},
-				creditCardToken: {
-					payerId: user_data.metadata.unique_id,
-					name: user_data.metadata.first_name + " " + user_data.metadata.last_name,
-					paymentMethod: user_data.card.card_type,
-					number: user_data.card.number,
-					expirationDate: user_data.card.exp_year + "/" + user_data.card.exp_month
-				}
+		if (type === "payu") { // use PayU
+			var credentials = {
+				apiLogin: user_data.security.api_login,
+				apiKey: user_data.security.api_key
 			};
-			payU.tokenize(url, data, country, function(err, card_token) {
+			var payload = {
+				"payerId": user_data.metadata.id,
+				"creditCardTokenId": user_data.card,
+				"startDate": "2010-01-01T12:00:00",
+				"endDate": "2012-01-01T12:00:00"
+			};
+			var url = user_data.security.url;
+			payU.inverse_tokenization(url, payload, credentials, function(err, card_info) {
 				if (err) {
 					self.response.error = err;
 					self.response.success = false;
 				}
-				self.response.body.card = card_token;
+				self.response.body = {
+					token: card_info.creditCardTokenId,
+					last4: card_info.maskedNumber.slice(-4),
+					cardType: card_info.paymentMethod.toUpperCase(),
+					maskedNumber: card_info.maskedNumber,
+					uniqueNumberIdentifier: card_info.identificationNumber,
+					customer: null,
+					country: country,
+					type: type,
+				};
 				cb(err, self.response);
 			});
-		} else if (country === "MEX") { // use Stripe
+		} else if (type === "stripe") { // use Stripe
+			function getStripeResponse(card_token) {
+				return {
+					token: card_token.card,
+					last4: card_token.last4,
+					cardType: card_token.brand.toUpperCase(),
+					maskedNumber: '****' + card_token.last4,
+					uniqueNumberIdentifier: card_token.fingerprint,
+					customer: card_token.customer,
+					country: country,
+					type: type,
+				};
+			}
 			user_data.source = user_data.card;
 			var security = user_data.security;
 			if (user_data.user_token) {
@@ -74,8 +66,7 @@ LatamPayment.prototype.register = function(country, user_data, cb) {
 						self.response.success = false;
 						throw ("User was not created. " + err);
 					}
-					self.response.body = card_token;
-					self.response.body.user = user_data.user_token;
+					self.response.body = getStripeResponse(card_token);
 					cb(err, self.response);
 				});
 			} else {
@@ -92,41 +83,13 @@ LatamPayment.prototype.register = function(country, user_data, cb) {
 							self.response.success = false;
 							throw ("User was not created. " + err);
 						}
-						self.response.body = card_token;
-						self.response.body.user = user_token;
-						self.response.body.card = card_token.id;
-						delete self.response.body.id;
+						self.response.body = getStripeResponse(card_token);
 						cb(err, self.response);
 					});
 				});
 			}
-		} else if (country === "ARG") { // use PayU
-			var url = user_data.security.url;
-			var data = {
-				language: "es",
-				command: "CREATE_TOKEN",
-				merchant: {
-					apiLogin: user_data.security.api_login,
-					apiKey: user_data.security.api_key
-				},
-				creditCardToken: {
-					payerId: user_data.metadata.unique_id,
-					name: user_data.metadata.first_name + " " + user_data.metadata.last_name,
-					paymentMethod: user_data.card.card_type,
-					number: user_data.card.number,
-					expirationDate: user_data.card.exp_year + "/" + user_data.card.exp_month
-				}
-			};
-			payU.tokenize(url, data, country, function(err, card_token) {
-				if (err) {
-					self.response.success = false;
-					self.response.error = err;
-				}
-				self.response.body.card = card_token;
-				cb(err, self.response);
-			});
 		} else {
-			throw "Country is not supported.";
+			throw "Type is not supported.";
 		}
 	} catch (err) {
 		self.response.success = false;
@@ -203,5 +166,43 @@ LatamPayment.prototype.checkout = function(country, user_data, cb) {
 	}
 };
 
+LatamPayment.prototype.tokenize = function(type, user_data, cb){
+	var self = this;
+	try {
+		if (type === "payu") { // use PayU
+			var url = user_data.security.url;
+			var data = {
+				language: "es",
+				command: "CREATE_TOKEN",
+				merchant: {
+					apiLogin: user_data.security.api_login,
+					apiKey: user_data.security.api_key
+				},
+				creditCardToken: {
+					payerId: user_data.metadata.unique_id,
+					name: user_data.metadata.first_name + " " + user_data.metadata.last_name,
+					paymentMethod: user_data.card.card_type,
+					number: user_data.card.number,
+					expirationDate: user_data.card.exp_year + "/" + user_data.card.exp_month
+				}
+			};
+			var country = user_data.country || 'COL';
+			payU.tokenize(url, data, country, function(err, card_token) {
+				if (err) {
+					self.response.error = err;
+					self.response.success = false;
+				}
+				self.response.body.card = card_token;
+				cb(err, self.response);
+			});
+		} else {
+			throw "Type is not supported.";
+		}
+	} catch (err) {
+		self.response.success = false;
+		self.response.error = err;
+		cb(err, self.response);
+	}
+};
 
 module.exports = new LatamPayment();
