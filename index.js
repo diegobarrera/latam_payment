@@ -39,7 +39,9 @@ LatamPayment.prototype.register = function(type, user_data, cb) {
 					cardType: card_info.paymentMethod.toUpperCase(),
 					maskedNumber: card_info.maskedNumber,
 					uniqueNumberIdentifier: card_info.identificationNumber,
-					customer: null
+					customer: null,
+					country: country,
+					type: type,
 				};
 				cb(err, self.response);
 			});
@@ -51,7 +53,9 @@ LatamPayment.prototype.register = function(type, user_data, cb) {
 					cardType: card_token.brand.toUpperCase(),
 					maskedNumber: '****' + card_token.last4,
 					uniqueNumberIdentifier: card_token.fingerprint,
-					customer: card_token.customer
+					customer: card_token.customer,
+					country: country,
+					type: type,
 				};
 			}
 			user_data.source = user_data.card;
