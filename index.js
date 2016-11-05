@@ -36,7 +36,7 @@ LatamPayment.prototype.register = function(type, user_data, cb) {
 				self.response.body = {
 					token: card_info.creditCardTokenId,
 					last4: card_info.maskedNumber.slice(-4),
-					cardType: card_info.paymentMethod,
+					cardType: card_info.paymentMethod.toUpperCase(),
 					maskedNumber: card_info.maskedNumber,
 					uniqueNumberIdentifier: card_info.identificationNumber,
 					customer: null
@@ -48,7 +48,7 @@ LatamPayment.prototype.register = function(type, user_data, cb) {
 				return {
 					token: card_token.card,
 					last4: card_token.last4,
-					cardType: card_token.brand,
+					cardType: card_token.brand.toUpperCase(),
 					maskedNumber: '****' + card_token.last4,
 					uniqueNumberIdentifier: card_token.fingerprint,
 					customer: card_token.customer
