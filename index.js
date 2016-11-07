@@ -15,7 +15,6 @@ function LatamPayment() {
 LatamPayment.prototype.register = function(type, user_data, cb) {
 	var self = this;
 	try {
-		country = country.toUpperCase();
 		if (type === "payu") { // use PayU
 			var credentials = {
 				apiLogin: user_data.security.api_login,
@@ -48,13 +47,13 @@ LatamPayment.prototype.register = function(type, user_data, cb) {
 		} else if (type === "stripe") { // use Stripe
 			function getStripeResponse(card_token) {
 				return {
-					token: card_token.card,
+					token: card_token.id,
 					last4: card_token.last4,
 					cardType: card_token.brand.toUpperCase(),
 					maskedNumber: '****' + card_token.last4,
 					uniqueNumberIdentifier: card_token.fingerprint,
 					customer: card_token.customer,
-					country: country,
+					country: user_data.metadata.country,
 					type: type,
 				};
 			}
