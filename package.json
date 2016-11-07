@@ -1,6 +1,6 @@
 {
 	"name": "latam_payment",
-	"version": "1.0.89",
+	"version": "1.1.0",
 	"description": "Payment module for latam",
 	"main": "index.js",
 	"scripts": {

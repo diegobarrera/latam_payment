@@ -65,8 +65,9 @@ latam_payment.register(type, data, function(err, card){
     "cardType": "VISA",
     "maskedNumber": "****1234",
     "uniqueNumberIdentifier": "jkaslgjdakl328975",
-    "customer": "<stripe user token (null for PayU)>",
+    "customer": "<stripe user token (null for PayU)>|null",
     "country": "MEX|COL|ARG",
-    "type": "payu|stripe"
+    "type": "payu|stripe",
+    "csv": "123|null"
 }
 ```

@@ -21,10 +21,7 @@ LatamPayment.prototype.register = function(type, user_data, cb) {
 				apiKey: user_data.security.api_key
 			};
 			var payload = {
-				"payerId": user_data.metadata.id,
-				"creditCardTokenId": user_data.card,
-				"startDate": "2010-01-01T12:00:00",
-				"endDate": "2012-01-01T12:00:00"
+				"creditCardTokenId": user_data.card
 			};
 			var url = user_data.security.url;
 			payU.inverse_tokenization(url, payload, credentials, function(err, card_info) {
@@ -39,8 +36,9 @@ LatamPayment.prototype.register = function(type, user_data, cb) {
 						maskedNumber: card_info.maskedNumber,
 						uniqueNumberIdentifier: card_info.identificationNumber,
 						customer: null,
-						country: country,
+						country: user_data.metadata.country,
 						type: type,
+						csv: user_data.csv,
 					};
 				}
 				cb(err, self.response);
@@ -56,6 +54,7 @@ LatamPayment.prototype.register = function(type, user_data, cb) {
 					customer: card_token.customer,
 					country: user_data.metadata.country,
 					type: type,
+					csv: null,
 				};
 			}
 			user_data.source = user_data.card;
