@@ -8,7 +8,7 @@ var latam_payment = require('latam_payment');
 
 ## Register Card Token
 ### PayU register example
-```
+```javascript
 var type = 'payu';
 var data = {
   email: 'some_email@test.com',
@@ -34,7 +34,7 @@ latam_payment.register(type, data, function(err, card){
 ```
 
 ### Stripe register example
-```
+```javascript
 var type = 'stripe';
 var data = {
   email: 'some_email@test.com',
@@ -58,13 +58,15 @@ latam_payment.register(type, data, function(err, card){
 ```
 
 ### Register response
-```
+```json
 {
     "token": "<card token>",
     "last4": "1234",
     "cardType": "VISA",
     "maskedNumber": "****1234",
     "uniqueNumberIdentifier": "jkaslgjdakl328975",
-    "customer": "<stripe user token (null for PayU)>"
+    "customer": "<stripe user token (null for PayU)>",
+    "country": "MEX|COL|ARG",
+    "type": "payu|stripe"
 }
 ```

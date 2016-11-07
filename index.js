@@ -31,17 +31,18 @@ LatamPayment.prototype.register = function(type, user_data, cb) {
 				if (err) {
 					self.response.error = err;
 					self.response.success = false;
+				} else {
+					self.response.body = {
+						token: card_info.creditCardTokenId,
+						last4: card_info.maskedNumber.slice(-4),
+						cardType: card_info.paymentMethod.toUpperCase(),
+						maskedNumber: card_info.maskedNumber,
+						uniqueNumberIdentifier: card_info.identificationNumber,
+						customer: null,
+						country: country,
+						type: type,
+					};
 				}
-				self.response.body = {
-					token: card_info.creditCardTokenId,
-					last4: card_info.maskedNumber.slice(-4),
-					cardType: card_info.paymentMethod.toUpperCase(),
-					maskedNumber: card_info.maskedNumber,
-					uniqueNumberIdentifier: card_info.identificationNumber,
-					customer: null,
-					country: country,
-					type: type,
-				};
 				cb(err, self.response);
 			});
 		} else if (type === "stripe") { // use Stripe
