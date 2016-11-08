@@ -62,24 +62,30 @@ LatamPayment.prototype.register = function(type, user_data, cb) {
 			if (user_data.user_token) {
 				stripe.addPaymentMethod(user_data, function(err, card_token) {
 					if (err) {
-						throw err;
+						self.response.success = false;
+						self.response.error = err;
+					} else {
+						self.response.body = getStripeResponse(card_token);
 					}
-					self.response.body = getStripeResponse(card_token);
 					cb(err, self.response);
 				});
 			} else {
 				stripe.createUser(user_data, function(err, user_token) {
 					if (err) {
-						throw err;
+						self.response.success = false;
+						self.response.error = err;
+						return cb(err, self.response);
 					}
 					user_data.user_token = user_token;
 					self.response.body.user = user_token;
 					user_data.security = security;
 					stripe.addPaymentMethod(user_data, function(err, card_token) {
 						if (err) {
-							throw err;
+							self.response.success = false;
+							self.response.error = err;
+						} else {
+							self.response.body = getStripeResponse(card_token);
 						}
-						self.response.body = getStripeResponse(card_token);
 						cb(err, self.response);
 					});
 				});
