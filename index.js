@@ -62,8 +62,7 @@ LatamPayment.prototype.register = function(type, user_data, cb) {
 			if (user_data.user_token) {
 				stripe.addPaymentMethod(user_data, function(err, card_token) {
 					if (err) {
-						self.response.success = false;
-						throw ("User was not created. " + err);
+						throw err;
 					}
 					self.response.body = getStripeResponse(card_token);
 					cb(err, self.response);
@@ -71,16 +70,14 @@ LatamPayment.prototype.register = function(type, user_data, cb) {
 			} else {
 				stripe.createUser(user_data, function(err, user_token) {
 					if (err) {
-						self.response.success = false;
-						throw ("User was not created. " + err);
+						throw err;
 					}
 					user_data.user_token = user_token;
 					self.response.body.user = user_token;
 					user_data.security = security;
 					stripe.addPaymentMethod(user_data, function(err, card_token) {
 						if (err) {
-							self.response.success = false;
-							throw ("User was not created. " + err);
+							throw err;
 						}
 						self.response.body = getStripeResponse(card_token);
 						cb(err, self.response);
@@ -88,7 +85,7 @@ LatamPayment.prototype.register = function(type, user_data, cb) {
 				});
 			}
 		} else {
-			throw "Type is not supported.";
+			throw new Error("Type is not supported");
 		}
 	} catch (err) {
 		self.response.success = false;
