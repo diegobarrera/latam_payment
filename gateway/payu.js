@@ -194,6 +194,63 @@ module.exports.sale = function(payload, credentials, type, cb) {
 	}], function(err, results) {
 		var signature2 = results[0];
 		var signature = results[1];
+		var body = {
+			language: 'es',
+			command: 'SUBMIT_TRANSACTION',
+			merchant: credentials,
+			transaction: {
+				order: {
+					accountId: accountId,
+					referenceCode: refCode,
+					description: description,
+					language: 'es',
+					signature: signature,
+					additionalValues: {
+						TX_VALUE: {
+							value: amount,
+							currency: currency
+						}
+					},
+					buyer: {
+						fullName: payload.metadata.first_name + ' ' + payload.metadata.last_name,
+						emailAddress: payload.email,
+						shippingAddress: {
+							city: cities_dictionary(payload.address.city),
+							street1: payload.address.line1,
+							phone: payload.metadata.phone
+						},
+						dniNumber: ''
+					}
+				},
+				payer: {
+					fullName: payload.metadata.first_name + ' ' + payload.metadata.last_name,
+					emailAddress: payload.email,
+					contactPhone: payload.metadata.phone,
+					billingAddress: {
+						city: cities_dictionary(payload.address.city),
+						street1: payload.address.line1,
+						phone: payload.metadata.phone
+					},
+					dniNumber: ''
+				},
+				creditCardTokenId: payload.payment.source.card,
+				extraParameters: {
+					'INSTALLMENTS_NUMBER': 1
+				},
+				type: type,
+				paymentMethod: payload.payment.card_type,
+				paymentCountry: country,
+				deviceSessionId: payload.security.device_session_id || signature2,
+				ipAddress: payload.security.ip,
+				cookie: payload.security.device_session_id,
+				userAgent: payload.security.user_agent,
+			},
+		};
+		if (payload.payment.cvc) {
+			body.transaction.creditCard = {
+				securityCode: payload.payment.cvc
+			};
+		}
 		request({
 			url: payload.security.url,
 			method: 'POST',
@@ -202,62 +259,7 @@ module.exports.sale = function(payload, credentials, type, cb) {
 				'Content-Type': 'application/json',
 				'Accept': 'application/json'
 			},
-			body: {
-				language: 'es',
-				command: 'SUBMIT_TRANSACTION',
-				merchant: credentials,
-				transaction: {
-					order: {
-						accountId: accountId,
-						referenceCode: refCode,
-						description: description,
-						language: 'es',
-						signature: signature,
-						additionalValues: {
-							TX_VALUE: {
-								value: amount,
-								currency: currency
-							}
-						},
-						buyer: {
-							fullName: payload.metadata.first_name + ' ' + payload.metadata.last_name,
-							emailAddress: payload.email,
-							shippingAddress: {
-								city: cities_dictionary(payload.address.city),
-								street1: payload.address.line1,
-								phone: payload.metadata.phone
-							},
-							dniNumber: ''
-						}
-					},
-					payer: {
-						fullName: payload.metadata.first_name + ' ' + payload.metadata.last_name,
-						emailAddress: payload.email,
-						contactPhone: payload.metadata.phone,
-						billingAddress: {
-							city: cities_dictionary(payload.address.city),
-							street1: payload.address.line1,
-							phone: payload.metadata.phone
-						},
-						dniNumber: ''
-					},
-					creditCardTokenId: payload.payment.source.card,
-					extraParameters: {
-						'INSTALLMENTS_NUMBER': 1
-					},
-					creditCard: {
-						securityCode: payload.payment.cvc
-					},
-					type: type,
-					paymentMethod: payload.payment.card_type,
-					paymentCountry: country,
-					deviceSessionId: payload.security.device_session_id || signature2,
-					ipAddress: payload.security.ip,
-					cookie: payload.security.device_session_id,
-					userAgent: payload.security.user_agent,
-				},
-				test: payload.security.test_mode
-			}
+			body: body
 		}, function(error, response, body) {
 			if (body && body.transactionResponse && body.transactionResponse.state === 'APPROVED') {
 				return cb(error, body.transactionResponse.transactionId);
@@ -269,6 +271,7 @@ module.exports.sale = function(payload, credentials, type, cb) {
 			if(body && body.transactionResponse) {
 				error.message = error.message + " " + body.transactionResponse.responseCode;
 			}
+			error.message = error.message.trim();
 			cb(error);
 		});
 	});
