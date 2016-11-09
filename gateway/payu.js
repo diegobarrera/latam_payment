@@ -260,11 +260,16 @@ module.exports.sale = function(payload, credentials, type, cb) {
 			}
 		}, function(error, response, body) {
 			if (body && body.transactionResponse && body.transactionResponse.state === 'APPROVED') {
-				cb(error, body.transactionResponse.transactionId);
-			} else {
-				error = error + " " + body.transactionResponse.responseCode;
-				cb(error, null);
+				return cb(error, body.transactionResponse.transactionId);
 			}
+			error = error || new Error('');
+			if(body && body.error) {
+				error.message = error.message + " " + body.error;
+			}
+			if(body && body.transactionResponse) {
+				error.message = error.message + " " + body.transactionResponse.responseCode;
+			}
+			cb(error);
 		});
 	});
 };
