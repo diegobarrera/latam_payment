@@ -262,7 +262,8 @@ module.exports.sale = function(payload, credentials, type, cb) {
 			body: body
 		}, function(error, response, body) {
 			if (body && body.transactionResponse && body.transactionResponse.state === 'APPROVED') {
-				return cb(error, body.transactionResponse.transactionId);
+				body.transactionResponse.captured = (type === "AUTHORIZATION_AND_CAPTURE");
+				return cb(error, body.transactionResponse);
 			}
 			error = error || new Error('');
 			if(body && body.error) {

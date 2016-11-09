@@ -28,7 +28,10 @@ LatamPayment.prototype.register = function(type, user_data, cb) {
 				if (err) {
 					self.response.error = err;
 					self.response.success = false;
+					self.response.body = {};
 				} else {
+					self.response.error = false;
+					self.response.success = true;
 					self.response.body = {
 						token: card_info.creditCardTokenId,
 						last4: card_info.maskedNumber.slice(-4),
@@ -63,8 +66,11 @@ LatamPayment.prototype.register = function(type, user_data, cb) {
 				stripe.addPaymentMethod(user_data, function(err, card_token) {
 					if (err) {
 						self.response.success = false;
-						self.response.error = err;
+						self.response.error = err.message;
+						self.response.body = {};
 					} else {
+						self.response.error = false;
+						self.response.success = true;
 						self.response.body = getStripeResponse(card_token);
 					}
 					cb(err, self.response);
@@ -73,7 +79,8 @@ LatamPayment.prototype.register = function(type, user_data, cb) {
 				stripe.createUser(user_data, function(err, user_token) {
 					if (err) {
 						self.response.success = false;
-						self.response.error = err;
+						self.response.error = err.message;
+						self.response.body = {};
 						return cb(err, self.response);
 					}
 					user_data.user_token = user_token;
@@ -82,8 +89,11 @@ LatamPayment.prototype.register = function(type, user_data, cb) {
 					stripe.addPaymentMethod(user_data, function(err, card_token) {
 						if (err) {
 							self.response.success = false;
-							self.response.error = err;
+							self.response.error = err.message;
+							self.response.body = {};
 						} else {
+							self.response.error = false;
+							self.response.success = true;
 							self.response.body = getStripeResponse(card_token);
 						}
 						cb(err, self.response);
@@ -95,7 +105,8 @@ LatamPayment.prototype.register = function(type, user_data, cb) {
 		}
 	} catch (err) {
 		self.response.success = false;
-		self.response.error = err;
+		self.response.error = err.message;
+		self.response.body = {};
 		cb(err, self.response);
 	}
 };
@@ -116,10 +127,15 @@ LatamPayment.prototype.checkout = function(type, user_data, cb) {
 				if (err) {
 					self.response.success = false;
 					self.response.error = err.message;
+					self.response.body = {};
 				} else {
+					console.log(body);
 					self.response.success = true;
-					self.response.error = null;
-					self.response.body.transaction = body;
+					self.response.error = false;
+					self.response.body = {
+						transaction: body.transactionId,
+						status: body.captured ? "paid" : "authorized",
+					};
 				}
 				cb(err, self.response);
 			});
@@ -132,18 +148,23 @@ LatamPayment.prototype.checkout = function(type, user_data, cb) {
 					email: user_data.email,
 					card: user_data.payment.source.card
 				},
+				mode: user_data.payment.mode,
 				security: {
 					api_key: user_data.security.api_key
 				}
 			};
-			stripe.sale(data, function(err, charge) {
-				if (err || charge.status !== 'succeeded') {
+			stripe.sale(data, function(err, body) {
+				if (err || body.status !== 'succeeded') {
 					self.response.success = false;
 					self.response.error = err.message;
+					self.response.body = {};
 				} else {
 					self.response.success = true;
-					self.response.error = null;
-					self.response.body.transaction = charge.id;
+					self.response.error = false;
+					self.response.body = {
+						transaction: body.id,
+						status: body.captured ? "paid" : "authorized",
+					};
 				}
 				cb(err, self.response);
 			});
@@ -152,7 +173,8 @@ LatamPayment.prototype.checkout = function(type, user_data, cb) {
 		}
 	} catch (err) {
 		self.response.success = false;
-		self.response.error = err;
+		self.response.error = err.message;
+		self.response.body = {};
 		cb(err, self.response);
 	}
 };

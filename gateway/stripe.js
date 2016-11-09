@@ -157,10 +157,25 @@ var sale_extra_transaction = function(order, amount, cb) {
 var sale = function(payment, cb) {
 	if (!stripe1) stripe1 = stripe(payment.security.api_key);
 	var amount = Math.round(payment.amount * 1.0 * 100);
+	var capture = payment.mode ? payment.mode.toLowerCase() === 'capture' : false;
+	console.log({
+		amount: amount,
+		currency: "mxn",
+		capture: capture,
+		metadata: {
+			internal_reference: payment.internal_reference,
+			user: payment.source.email,
+		},
+		receipt_email: payment.source.email,
+		description: 'Charge for service',
+		customer: payment.source.user,
+		source: payment.source.card,
+		statement_descriptor: 'Mercadoni ' + payment.internal_reference
+	});
 	stripe1.charges.create({
 		amount: amount,
 		currency: "mxn",
-		capture: false,
+		capture: capture,
 		metadata: {
 			internal_reference: payment.internal_reference,
 			user: payment.source.email,

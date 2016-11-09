@@ -7,7 +7,7 @@ var latam_payment = require('latam_payment');
 ```
 
 ## Register Card Token
-### PayU register example
+#### PayU register example
 ```javascript
 var type = 'payu';
 var data = {
@@ -33,7 +33,7 @@ latam_payment.register(type, data, function(err, card){
 });
 ```
 
-### Stripe register example
+#### Stripe register example
 ```javascript
 var type = 'stripe';
 var data = {
@@ -57,7 +57,7 @@ latam_payment.register(type, data, function(err, card){
 });
 ```
 
-### Register response
+#### Register response
 ```json
 {
     "token": "<card token>",
@@ -69,5 +69,99 @@ latam_payment.register(type, data, function(err, card){
     "country": "MEX|COL|ARG",
     "type": "payu|stripe",
     "csv": "123|null"
+}
+```
+
+##Checkout
+####PayU checkout example
+```javascript
+var type = 'payu';
+var data = {
+  email: 'test@email.com',
+  payment: {
+    internal_reference: 'ABC12398',
+    amount: 500,
+    source: {
+      user: null,
+      card: 'f064b5d0-2fbb-43df-b54f-ab92a3796a5c'
+    },
+    cvc: '123', //optional for Colombia
+    card_type: 'VISA',
+    mode: 'AUTHORIZATION' //Colombia only accepts 'AUTHORIZATION_AND_CAPTURE'; if not present, defaults to 'AUTHORIZATION_AND_CAPTURE'
+  },
+  metadata: {
+    id: '123456789',// user id
+    first_name: 'John',
+    last_name: 'Doe',
+    phone: '123456789',
+    country: 'ARG',
+    city: 'BNA'
+  },
+  address: {
+    line1: 'Avenida entre rios 256',
+    country: 'ARG',
+    city: 'BNA'
+  },
+  security: {
+    url: 'https://sandbox.api.payulatam.com/payments-api/4.0/service.cgi',
+    account_id: '512322',
+    merchant_id: '508029',
+    api_key: '4Vj8eK4rloUd272L48hsrarnUA',
+    api_login: 'pRRXKOl8ikMmt9u',
+    ip: '127.0.0.1',
+    device_session_id: 'vghs6tvkcle931686k1900o6e1',
+    user_agent: 'Mozilla/5.0 (Windows NT 5.1; rv:18.0) Gecko/20100101 Firefox/18.0'
+  }
+};
+latam_payment.checkout(type, data, function(err, transaction){
+    // do something with transaction
+});
+```
+
+####Stripe checkout example
+```javascript
+var type = 'stripe';
+var data = {
+  email: 'test@email.com',
+  payment: {
+    internal_reference: 'ABC12398',
+    amount: 500,
+    source: {
+      user: 'cus_jkds78392ufdsa78',
+      card: 'card_jdk789236fdjk39'
+    },
+    mode: 'capture' // if equal to 'capture', sets capture=true; else, sets capture=false
+  },
+  metadata: {
+    id: '123456789',// user id
+    first_name: 'John',
+    last_name: 'Doe',
+    phone: '123456789',
+    country: 'ARG',
+    city: 'BNA'
+  },
+  address: {
+    line1: 'Avenida entre rios 256',
+    country: 'ARG',
+    city: 'BNA'
+  },
+  security: {
+    api_key: '<stripe api key>',
+  }
+};
+latam_payment.checkout(type, data, function(err, transaction){
+    // do something with transaction
+});
+```
+
+#### Checkout response
+```json
+{
+  "success": true,
+  "error": null,
+  "body": {
+    "transaction": "<transaction id>",
+    "status": "paid|authorized"
+  }
 }
 ```
