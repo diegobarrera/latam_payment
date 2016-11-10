@@ -16,6 +16,8 @@
 	"author": "Diego Barrera <diegobarrera25@gmail.com>",
 	"license": "ISC",
 	"dependencies": {
+		"lodash": "^4.16.6",
+		"moment-timezone": "^0.5.9",
 		"request": "2.65.0",
 		"stripe": "^4.12.0"
 	}

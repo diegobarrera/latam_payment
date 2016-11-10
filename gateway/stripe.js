@@ -157,10 +157,11 @@ var sale_extra_transaction = function(order, amount, cb) {
 var sale = function(payment, cb) {
 	if (!stripe1) stripe1 = stripe(payment.security.api_key);
 	var amount = Math.round(payment.amount * 1.0 * 100);
+	var capture = payment.mode ? payment.mode.toLowerCase() === 'capture' : false;
 	stripe1.charges.create({
 		amount: amount,
 		currency: "mxn",
-		capture: false,
+		capture: capture,
 		metadata: {
 			internal_reference: payment.internal_reference,
 			user: payment.source.email,

@@ -28,7 +28,10 @@ LatamPayment.prototype.register = function(type, user_data, cb) {
 				if (err) {
 					self.response.error = err;
 					self.response.success = false;
+					self.response.body = {};
 				} else {
+					self.response.error = false;
+					self.response.success = true;
 					self.response.body = {
 						token: card_info.creditCardTokenId,
 						last4: card_info.maskedNumber.slice(-4),
@@ -63,8 +66,11 @@ LatamPayment.prototype.register = function(type, user_data, cb) {
 				stripe.addPaymentMethod(user_data, function(err, card_token) {
 					if (err) {
 						self.response.success = false;
-						self.response.error = err;
+						self.response.error = err.message;
+						self.response.body = {};
 					} else {
+						self.response.error = false;
+						self.response.success = true;
 						self.response.body = getStripeResponse(card_token);
 					}
 					cb(err, self.response);
@@ -73,7 +79,8 @@ LatamPayment.prototype.register = function(type, user_data, cb) {
 				stripe.createUser(user_data, function(err, user_token) {
 					if (err) {
 						self.response.success = false;
-						self.response.error = err;
+						self.response.error = err.message;
+						self.response.body = {};
 						return cb(err, self.response);
 					}
 					user_data.user_token = user_token;
@@ -82,8 +89,11 @@ LatamPayment.prototype.register = function(type, user_data, cb) {
 					stripe.addPaymentMethod(user_data, function(err, card_token) {
 						if (err) {
 							self.response.success = false;
-							self.response.error = err;
+							self.response.error = err.message;
+							self.response.body = {};
 						} else {
+							self.response.error = false;
+							self.response.success = true;
 							self.response.body = getStripeResponse(card_token);
 						}
 						cb(err, self.response);
@@ -95,32 +105,41 @@ LatamPayment.prototype.register = function(type, user_data, cb) {
 		}
 	} catch (err) {
 		self.response.success = false;
-		self.response.error = err;
+		self.response.error = err.message;
+		self.response.body = {};
 		cb(err, self.response);
 	}
 };
 
-LatamPayment.prototype.checkout = function(country, user_data, cb) {
+LatamPayment.prototype.checkout = function(type, user_data, cb) {
 	var self = this;
 	try {
-		country = country.toUpperCase();
-		if (country === "COL") { // use PayU
+		if (type === "payu") { // use PayU
 			var credentials = {
 				apiLogin: user_data.security.api_login,
 				apiKey: user_data.security.api_key
 			};
+			var payment_mode = user_data.payment.mode || 'AUTHORIZATION_AND_CAPTURE';
 			if (user_data.security && !user_data.security.url) {
 				user_data.security.url = "https://sandbox.api.payulatam.com/payments-api/4.0/service.cgi";
 			}
-			payU.sale(user_data, credentials, 'AUTHORIZATION_AND_CAPTURE', function(err, body) {
+			payU.sale(user_data, credentials, payment_mode, function(err, body) {
 				if (err) {
 					self.response.success = false;
-					self.response.error = err;
+					self.response.error = err.message;
+					self.response.body = {};
+				} else {
+					console.log(body);
+					self.response.success = true;
+					self.response.error = false;
+					self.response.body = {
+						transaction: body.transactionId,
+						status: body.captured ? "paid" : "authorized",
+					};
 				}
-				self.response.body.transaction = body;
-				return cb(err, self.response);
+				cb(err, self.response);
 			});
-		} else if (country === "MEX") { // use Stripe
+		} else if (type === "stripe") { // use Stripe
 			var data = {
 				amount: user_data.payment.amount,
 				internal_reference: user_data.payment.internal_reference,
@@ -129,42 +148,34 @@ LatamPayment.prototype.checkout = function(country, user_data, cb) {
 					email: user_data.email,
 					card: user_data.payment.source.card
 				},
+				mode: user_data.payment.mode,
 				security: {
 					api_key: user_data.security.api_key
 				}
 			};
-			stripe.sale(data, function(err, charge) {
-				if (err || charge.status !== 'succeeded') {
+			stripe.sale(data, function(err, body) {
+				if (err || body.status !== 'succeeded') {
 					self.response.success = false;
-					self.response.error = err;
-					return cb(err, self.response);
+					self.response.error = err.message;
+					self.response.body = {};
+				} else {
+					self.response.success = true;
+					self.response.error = false;
+					self.response.body = {
+						transaction: body.id,
+						status: body.captured ? "paid" : "authorized",
+					};
 				}
-				self.response.body.transaction = charge.id;
-				return cb(err, self.response);
-			});
-		} else if (country === "ARG") { // use PayU
-			var credentials = {
-				apiLogin: user_data.security.api_login,
-				apiKey: user_data.security.api_key
-			};
-			if (user_data.security && !user_data.security.url) {
-				user_data.security.url = "https://sandbox.api.payulatam.com/payments-api/4.0/service.cgi";
-			}
-			payU.sale(user_data, credentials, 'AUTHORIZATION', function(err, body) {
-				if (err) {
-					self.response.error = err;
-					self.response.success = false;
-				}
-				self.response.body.transaction = body;
-				return cb(err, self.response);
+				cb(err, self.response);
 			});
 		} else {
-			throw "Country is not supported.";
+			throw "Type is not supported.";
 		}
 	} catch (err) {
 		self.response.success = false;
-		self.response.error = err;
-		return cb(true, self.response);
+		self.response.error = err.message;
+		self.response.body = {};
+		cb(err, self.response);
 	}
 };
 
