@@ -127,14 +127,18 @@ module.exports.createToken = function(user_id, name, id_Number, paymentMethod, c
 
 
 module.exports.delete_payment_method = function(url, payload, credentials, cb) {
+	credentials.apiLogin = credentials.apiLogin || credentials.api_login;
+	credentials.apiKey = credentials.apiKey || credentials.api_key;
+	delete credentials.api_key;
+	delete credentials.api_login;
 	request({
 		url: url,
 		method: 'POST',
-		json: true,
 		headers: {
-			'Content-Type': 'application/json',
-			Accept: 'application/json'
+			Accept: 'application/json',
+			'Content-Type': 'application/json'
 		},
+		json: true,
 		body: {
 			language: 'es',
 			command: 'REMOVE_TOKEN',
