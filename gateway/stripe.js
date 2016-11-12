@@ -227,33 +227,9 @@ var get_transaction = function(order_id, cb) {
 
 
 
-var delete_payment_method = function(user_id, token, cb) {
-	async.waterfall([
-
-		function(cb) {
-			base.User.findOneAndUpdate({
-				_id: user_id
-			}, {
-				$pull: {
-					'payment_info.payment_methods': {
-						token: token
-					}
-				}
-			}, {
-				multi: false,
-				new: true
-			}).exec(cb);
-		},
-		function(user, cb) {
-			stripe.customers.deleteCard(
-				user.payment_info.stripe_id,
-				token,
-				function(err, result) {
-					cb(err, user);
-				}
-			);
-		}
-	], cb);
+var delete_payment_method = function(payload, credentials, cb) {
+	if (!stripe1) stripe1 = stripe(credentials.api_key);
+	stripe1.customers.deleteCard(payload.user, payload.card, cb);
 };
 
 module.exports = stripe;

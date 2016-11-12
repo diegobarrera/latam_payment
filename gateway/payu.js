@@ -55,7 +55,6 @@ module.exports.inverse_tokenization = function(url, payload, credentials, cb) {
 			err = err + " " + body.error;
 			cb(err, null);
 		}
-
 	});
 };
 
@@ -127,50 +126,35 @@ module.exports.createToken = function(user_id, name, id_Number, paymentMethod, c
 };
 
 
-module.exports.delete_payment_method = function(user_id, token, country, cb) {
-	process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
-
-	async.waterfall([
-
-		function(cb) {
-			base.User.findOneAndUpdate({
-				_id: user_id
-			}, {
-				$pull: {
-					'payment_info.payment_methods': {
-						token: token
-					}
-				}
-			}, {
-				multi: false,
-				new: true
-			}).exec(cb);
+module.exports.delete_payment_method = function(url, payload, credentials, cb) {
+	request({
+		url: url,
+		method: 'POST',
+		json: true,
+		headers: {
+			'Content-Type': 'application/json',
+			Accept: 'application/json'
 		},
-		function(user, cb) {
-			//Comment this piece of code as we don't want to remove credi cards on payU
-			/*request({
-				url: config.payu.urlpaymentsApi, // "https://stg.api.payulatam.com/payments-api/4.0/service.cgi",
-				method: 'POST',
-				json: true,
-				headers: {
-					'Content-Type': 'application/json',
-					'Accept': 'application/json'
-				},
-				body: {
-					'language': 'es',
-					'command': 'REMOVE_TOKEN',
-					merchant: get_gateway(country),
-					removeCreditCardToken: {
-						payerId: user_id,
-						creditCardTokenId: token
-					}
-				}
-			}, function(error, response, body) {
-				cb(error, user);
-			});*/
-			cb(null, user);
+		body: {
+			language: 'es',
+			command: 'REMOVE_TOKEN',
+			merchant: credentials,
+			removeCreditCardToken: {
+				payerId: payload.user,
+				creditCardTokenId: payload.card,
+			},
+		},
+	}, function(error, response, body) {
+		if (body && body.code === 'SUCCESS') {
+			cb(null, body);
+		} else {
+			error = error || new Error('');
+			if (body && body.error) {
+				error.message = error.message+ " " + body.error;
+			}
+			cb(error, null);
 		}
-	], cb);
+	});
 };
 
 module.exports.sale = function(payload, credentials, type, cb) {
