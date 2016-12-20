@@ -155,15 +155,16 @@ latam_payment.checkout(type, data, function(err, transaction){
 ```
 
 #### Checkout response
+**NOTE:** `orderId` is null for Stripe transactions.
 ```json
 {
   "success": true,
   "error": null,
   "body": {
-    "orderId": "<payuOrderId>|" | null
+    "orderId": "<payuOrderId>",
     "transaction": "<transaction id>",
     "status": "paid|authorized",
-    "amount": <transaction_amount>
+    "amount": 500
   }
 }
 ```
