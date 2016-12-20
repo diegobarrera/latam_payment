@@ -315,14 +315,11 @@ module.exports.sale = function(payload, credentials, type, cb) {
 	});
 };
 
-module.exports.void = function(payload, credentials, type, cb) {
-	payload = {
-		transaction_id: "96535b36-99db-4c66-bd87-6ad5c59b25a8",
-		order_id: "40049920"
-	};
+module.exports.void = function(payload, credentials, cb) {
+	var url = payload.security.url;
 	var country = (payload.metadata.country === 'COL') ? 'CO' : 'AR';
 	request({
-		url: config.payu[country].urlpaymentsApi,
+		url: url,
 		method: 'POST',
 		json: true,
 		headers: {
@@ -335,16 +332,21 @@ module.exports.void = function(payload, credentials, type, cb) {
 			'merchant': credentials,
 			'transaction': {
 				'order': {
-					'id': payload.order_id
+					'id': payload.transaction.order_id
 				},
 				'type': 'VOID',
 				'reason': 'Return for verification',
-				'parentTransactionId': payload.transaction
+				'parentTransactionId': payload.transaction.transaction_id
 			},
 			'test': false
 		}
-	}, function(error, response, body) {
-		cb(error, body);
+	}, function(err, response, body) {
+		if (body && body.code === 'SUCCESS') {
+			cb(err, body);
+		} else {
+			err = err + " " + body.error;
+			cb(err, null);
+		}
 	});
 };
 

@@ -135,7 +135,6 @@ LatamPayment.prototype.checkout = function(type, user_data, cb) {
 					self.response.body = {
 						orderId: body.orderId,
 						transaction: body.transactionId,
-						order: body.orderId,
 						status: body.captured ? "paid" : "authorized",
 						amount: amount,
 					};
@@ -227,31 +226,19 @@ LatamPayment.prototype.void = function(type, user_data, cb) {
 	var self = this;
 	try {
 		if (type === "payu") { // use PayU
-			var url = user_data.security.url;
-			var data = {
-				language: "es",
-				command: "SUBMIT_TRANSACTION",
-				merchant: {
-					apiLogin: user_data.security.api_login,
-					apiKey: user_data.security.api_key
-				},
-				transaction: {
-					order: {
-						id: payload.order_id
-					},
-					type: 'VOID',
-					reason: 'Return for verification',
-					parentTransactionId: payload.transaction
-				},
-				test: false,
+			var credentials = {
+				apiLogin: user_data.security.api_login,
+				apiKey: user_data.security.api_key
 			};
 			var country = user_data.country || 'COL';
-			payU.void(url, data, country, function(err, card_token) {
+			payU.void(user_data, credentials, function(err, transaction) {
 				if (err) {
 					self.response.error = err;
 					self.response.success = false;
 				}
-				self.response.body.card = card_token;
+				self.response.body = {
+					//transaction: transaction
+				};
 				cb(err, self.response);
 			});
 		} else {
@@ -290,7 +277,7 @@ var data = {
 };
 latam_payment.register(type, data, function(err, card) {
 	// do something with card
-	console.log(err, card);
+	//console.log(err, card);
 
 	var type = 'payu';
 	var data = {
