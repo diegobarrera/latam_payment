@@ -47,7 +47,7 @@ LatamPayment.prototype.register = function(type, user_data, cb) {
 				cb(err, self.response);
 			});
 		} else if (type === "stripe") { // use Stripe
-			function getStripeResponse(card_token) {
+			var getStripeResponse = function(card_token) {
 				return {
 					token: card_token.id,
 					last4: card_token.last4,
@@ -59,7 +59,7 @@ LatamPayment.prototype.register = function(type, user_data, cb) {
 					type: type,
 					csv: null,
 				};
-			}
+			};
 			user_data.source = user_data.card;
 			var security = user_data.security;
 			if (user_data.user_token) {
@@ -129,11 +129,11 @@ LatamPayment.prototype.checkout = function(type, user_data, cb) {
 					self.response.error = err.message;
 					self.response.body = {};
 				} else {
-					console.log(body);
 					self.response.success = true;
 					self.response.error = false;
 					self.response.body = {
 						transaction: body.transactionId,
+						order: body.orderId,
 						status: body.captured ? "paid" : "authorized",
 					};
 				}
@@ -179,7 +179,7 @@ LatamPayment.prototype.checkout = function(type, user_data, cb) {
 	}
 };
 
-LatamPayment.prototype.tokenize = function(type, user_data, cb){
+LatamPayment.prototype.tokenize = function(type, user_data, cb) {
 	var self = this;
 	try {
 		if (type === "payu") { // use PayU
@@ -217,5 +217,118 @@ LatamPayment.prototype.tokenize = function(type, user_data, cb){
 		cb(err, self.response);
 	}
 };
+
+LatamPayment.prototype.void = function(type, user_data, cb) {
+	var self = this;
+	try {
+		if (type === "payu") { // use PayU
+			var url = user_data.security.url;
+			var data = {
+				language: "es",
+				command: "SUBMIT_TRANSACTION",
+				merchant: {
+					apiLogin: user_data.security.api_login,
+					apiKey: user_data.security.api_key
+				},
+				transaction: {
+					order: {
+						id: payload.order_id
+					},
+					type: 'VOID',
+					reason: 'Return for verification',
+					parentTransactionId: payload.transaction
+				},
+				test: false,
+			};
+			var country = user_data.country || 'COL';
+			payU.void(url, data, country, function(err, card_token) {
+				if (err) {
+					self.response.error = err;
+					self.response.success = false;
+				}
+				self.response.body.card = card_token;
+				cb(err, self.response);
+			});
+		} else {
+			throw "Type is not supported.";
+		}
+	} catch (err) {
+		self.response.success = false;
+		self.response.error = err;
+		cb(err, self.response);
+	}
+};
+
+
+
+
+
+var latam_payment = new LatamPayment();
+var type = 'payu';
+var data = {
+	email: 'some_email@test.com',
+	metadata: {
+		id: 'user id 1',
+		first_name: 'John',
+		last_name: 'Doe',
+		country: 'COL',
+		city: 'BOG'
+	},
+	description: 'Customer for some_email@test.com',
+	card: '10cc215f-ccf9-4c63-8f9e-5181ee78e6c1',
+	user_token: null,
+	security: {
+		url: 'https://sandbox.api.payulatam.com/payments-api/4.0/service.token',
+		api_login: 'pRRXKOl8ikMmt9u',
+		api_key: '4Vj8eK4rloUd272L48hsrarnUA'
+	}
+};
+latam_payment.register(type, data, function(err, card) {
+	// do something with card
+	console.log(err, card);
+
+	var type = 'payu';
+	var data = {
+		email: 'test@email.com',
+		payment: {
+			internal_reference: 'ABC12398',
+			amount: 500,
+			source: {
+				user: null,
+				card: '3ba2c031-a8c0-4c9f-9025-7eacf8dd14e2'
+			},
+			cvc: '123', //optional for Colombia
+			card_type: 'VISA',
+			mode: 'AUTHORIZATION' //Colombia only accepts 'AUTHORIZATION_AND_CAPTURE'; if not present, defaults to 'AUTHORIZATION_AND_CAPTURE'
+		},
+		metadata: {
+			id: '123456789', // user id
+			first_name: 'John',
+			last_name: 'Doe',
+			phone: '123456789',
+			country: 'COL',
+			city: 'BOG'
+		},
+		address: {
+			line1: 'Avenida entre rios 256',
+			country: 'COL',
+			city: 'BOG'
+		},
+		security: {
+			url: 'https://sandbox.api.payulatam.com/payments-api/4.0/service.cgi',
+			account_id: '512322',
+			merchant_id: '508029',
+			api_key: '4Vj8eK4rloUd272L48hsrarnUA',
+			api_login: 'pRRXKOl8ikMmt9u',
+			ip: '127.0.0.1',
+			device_session_id: 'vghs6tvkcle931686k1900o6e1',
+			user_agent: 'Mozilla/5.0 (Windows NT 5.1; rv:18.0) Gecko/20100101 Firefox/18.0'
+		}
+	};
+	latam_payment.checkout(type, data, function(err, transaction) {
+		// do something with transaction
+		console.log(err, transaction);
+	});
+});
 
 module.exports = new LatamPayment();

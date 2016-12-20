@@ -49,6 +49,22 @@ module.exports.inverse_tokenization = function(url, payload, credentials, cb) {
 		json: true,
 		body: data
 	}, function(err, res, body) {
+		body = {
+			"code": "SUCCESS",
+			"error": null,
+			"creditCardTokenList": [{
+				"creditCardTokenId": "3ba2c031-a8c0-4c9f-9025-7eacf8dd14e2",
+				"name": "full name",
+				"payerId": "10",
+				"identificationNumber": "32144457",
+				"paymentMethod": "VISA",
+				"number": null,
+				"expirationDate": null,
+				"creationDate": "2014-01-16T15:15:46",
+				"maskedNumber": "411111******1111",
+				"errorDescription": null
+			}]
+		};
 		if (body && body.code === 'SUCCESS') {
 			cb(err, body.creditCardTokenList[0]);
 		} else {
@@ -261,15 +277,36 @@ module.exports.sale = function(payload, credentials, type, cb) {
 			},
 			body: body
 		}, function(error, response, body) {
+			body = {
+				"code": "SUCCESS",
+				"error": null,
+				"transactionResponse": {
+					"orderId": 40049920,
+					"transactionId": "96535b36-99db-4c66-bd87-6ad5c59b25a8",
+					"state": "APPROVED",
+					"paymentNetworkResponseCode": null,
+					"paymentNetworkResponseErrorMessage": null,
+					"trazabilityCode": null,
+					"authorizationCode": null,
+					"pendingReason": null,
+					"responseCode": "ANTIFRAUD_REJECTED",
+					"errorCode": null,
+					"responseMessage": null,
+					"transactionDate": null,
+					"transactionTime": null,
+					"operationDate": null,
+					"extraParameters": null
+				}
+			};
 			if (body && body.transactionResponse && body.transactionResponse.state === 'APPROVED') {
 				body.transactionResponse.captured = (type === "AUTHORIZATION_AND_CAPTURE");
 				return cb(error, body.transactionResponse);
 			}
 			error = error || new Error('');
-			if(body && body.error) {
+			if (body && body.error) {
 				error.message = error.message + " " + body.error;
 			}
-			if(body && body.transactionResponse) {
+			if (body && body.transactionResponse) {
 				error.message = error.message + " " + body.transactionResponse.responseCode;
 			}
 			error.message = error.message.trim();
@@ -278,8 +315,12 @@ module.exports.sale = function(payload, credentials, type, cb) {
 	});
 };
 
-module.exports.void = function(order_id, transaction_id, country, cb) {
-	process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+module.exports.void = function(payload, credentials, type, cb) {
+	payload = {
+		transaction_id: "96535b36-99db-4c66-bd87-6ad5c59b25a8",
+		order_id: "40049920"
+	};
+	var country = (payload.metadata.country === 'COL') ? 'CO' : 'AR';
 	request({
 		url: config.payu[country].urlpaymentsApi,
 		method: 'POST',
@@ -291,16 +332,16 @@ module.exports.void = function(order_id, transaction_id, country, cb) {
 		body: {
 			'language': 'es',
 			'command': 'SUBMIT_TRANSACTION',
-			'merchant': get_gateway(country),
+			'merchant': credentials,
 			'transaction': {
 				'order': {
-					'id': order_id
+					'id': payload.order_id
 				},
 				'type': 'VOID',
 				'reason': 'Return for verification',
-				'parentTransactionId': transaction_id
+				'parentTransactionId': payload.transaction
 			},
-			'test': config.payu[country].test
+			'test': false
 		}
 	}, function(error, response, body) {
 		cb(error, body);
