@@ -114,6 +114,7 @@ LatamPayment.prototype.register = function(type, user_data, cb) {
 LatamPayment.prototype.checkout = function(type, user_data, cb) {
 	var self = this;
 	try {
+		var amount = Number(Number(user_data.payment.amount).toFixed(2));
 		if (type === "payu") { // use PayU
 			var credentials = {
 				apiLogin: user_data.security.api_login,
@@ -129,12 +130,13 @@ LatamPayment.prototype.checkout = function(type, user_data, cb) {
 					self.response.error = err.message;
 					self.response.body = {};
 				} else {
-					console.log(body);
 					self.response.success = true;
 					self.response.error = false;
 					self.response.body = {
+						orderId: body.orderId,
 						transaction: body.transactionId,
 						status: body.captured ? "paid" : "authorized",
+						amount: amount,
 					};
 				}
 				cb(err, self.response);
@@ -162,8 +164,10 @@ LatamPayment.prototype.checkout = function(type, user_data, cb) {
 					self.response.success = true;
 					self.response.error = false;
 					self.response.body = {
+						orderId: null,
 						transaction: body.id,
 						status: body.captured ? "paid" : "authorized",
+						amount: amount,
 					};
 				}
 				cb(err, self.response);

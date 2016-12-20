@@ -160,8 +160,10 @@ latam_payment.checkout(type, data, function(err, transaction){
   "success": true,
   "error": null,
   "body": {
+    "orderId": "<payuOrderId>|" | null
     "transaction": "<transaction id>",
-    "status": "paid|authorized"
+    "status": "paid|authorized",
+    "amount": <transaction_amount>
   }
 }
 ```
