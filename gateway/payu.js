@@ -49,22 +49,6 @@ module.exports.inverse_tokenization = function(url, payload, credentials, cb) {
 		json: true,
 		body: data
 	}, function(err, res, body) {
-		body = {
-			"code": "SUCCESS",
-			"error": null,
-			"creditCardTokenList": [{
-				"creditCardTokenId": "3ba2c031-a8c0-4c9f-9025-7eacf8dd14e2",
-				"name": "full name",
-				"payerId": "10",
-				"identificationNumber": "32144457",
-				"paymentMethod": "VISA",
-				"number": null,
-				"expirationDate": null,
-				"creationDate": "2014-01-16T15:15:46",
-				"maskedNumber": "411111******1111",
-				"errorDescription": null
-			}]
-		};
 		if (body && body.code === 'SUCCESS') {
 			cb(err, body.creditCardTokenList[0]);
 		} else {
@@ -277,27 +261,6 @@ module.exports.sale = function(payload, credentials, type, cb) {
 			},
 			body: body
 		}, function(error, response, body) {
-			body = {
-				"code": "SUCCESS",
-				"error": null,
-				"transactionResponse": {
-					"orderId": 40049920,
-					"transactionId": "96535b36-99db-4c66-bd87-6ad5c59b25a8",
-					"state": "APPROVED",
-					"paymentNetworkResponseCode": null,
-					"paymentNetworkResponseErrorMessage": null,
-					"trazabilityCode": null,
-					"authorizationCode": null,
-					"pendingReason": null,
-					"responseCode": "ANTIFRAUD_REJECTED",
-					"errorCode": null,
-					"responseMessage": null,
-					"transactionDate": null,
-					"transactionTime": null,
-					"operationDate": null,
-					"extraParameters": null
-				}
-			};
 			if (body && body.transactionResponse && body.transactionResponse.state === 'APPROVED') {
 				body.transactionResponse.captured = (type === "AUTHORIZATION_AND_CAPTURE");
 				return cb(error, body.transactionResponse);
