@@ -1,3 +1,4 @@
+var authorizeSuite = require('./authorize');
 var createTokenSuite = require('./createToken');
 var deleteTokenSuite = require('./deleteToken');
 var getTokenSuite = require('./getToken');
@@ -8,4 +9,5 @@ module.exports = function describeAmex() {
 	describe('createToken', createTokenSuite);
 	describe('deleteToken', deleteTokenSuite);
 	describe('getToken', getTokenSuite);
+	describe('authorize', authorizeSuite);
 };
