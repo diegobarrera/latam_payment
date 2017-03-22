@@ -59,6 +59,33 @@ module.exports = function voidSuite() {
 			done();
 		});
 	});
+	it('Capture smaller amount', function test(done) {
+		var payload = {
+			payment: {
+				amount: 300,
+				currency: 'MXN',
+			},
+		};
+		amex.capture(orderId, payload, credentials, function(err, body) {
+			expect(err).to.not.exist;
+			expect(body.order.status).to.equal('PARTIALLY_CAPTURED');
+			done();
+		});
+	});
+	it('Capture larger amount', function test(done) {
+		var payload = {
+			payment: {
+				amount: 501,
+				currency: 'MXN',
+			},
+		};
+		amex.capture(orderId, payload, credentials, function(err, body) {
+			expect(err).to.exist;
+			expect(err.statusCode).to.equal(400);
+			expect(err.explanation).to.contain('Requested capture amount exceeds outstanding authorized amount');
+			done();
+		});
+	});
 	it('orderId not found', function test(done) {
 		var payload = {
 			payment: {

@@ -87,6 +87,20 @@ module.exports = function refundSuite() {
 			done();
 		});
 	});
+	it('Refund payment with smaller amount', function test(done) {
+		var payload = {
+			payment: {
+				amount: 300,
+				currency: 'MXN',
+			},
+		};
+		amex.refund(orderId, payload, credentials, function(err, body) {
+			expect(err).to.not.exist;
+			expect(body.order.status).to.equal('PARTIALLY_REFUNDED');
+			expect(body.order.totalRefundedAmount).to.equal(300);
+			done();
+		});
+	});
 	it('orderId not found', function test(done) {
 		var payload = {
 			payment: {
