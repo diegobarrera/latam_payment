@@ -40,4 +40,12 @@ module.exports = function deleteTokenSuite() {
 			done();
 		});
 	});
+	it('Token not found', function test(done) {
+		amex.deleteToken('156156561516', credentials, function(err, body) {
+			expect(err).to.exist;
+			expect(err.statusCode).to.equal(400);
+			expect(err.explanation).to.equal('Token not found');
+			done();
+		});
+	});
 };
