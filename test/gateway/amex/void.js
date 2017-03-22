@@ -53,6 +53,22 @@ module.exports = function voidSuite() {
             done();
         });
     });
+    it('Void captured payment', function test(done) {
+        var payload = {
+            payment: {
+                amount: 500,
+                currency: 'MXN',
+            },
+        };
+        amex.capture(orderId, payload, credentials, function() {
+            amex.void(orderId, transactionId, credentials, function(err, body) {
+                expect(err).to.exist;
+                expect(err.statusCode).to.equal(400);
+                expect(err.explanation).to.contain('Target transaction has already successfully been captured');
+                done();
+            });
+        });
+    });
     it('orderId not found', function test(done) {
         amex.void('jdklajg156156', transactionId, credentials, function(err, body) {
             expect(err).to.exist;
