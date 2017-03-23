@@ -2,13 +2,9 @@ var expect = require('chai').expect;
 var uuid = require('node-uuid');
 var amex = require('gateway/amex');
 
-var credentials = {
-	merchantId: 'TEST9353874515',
-	password: 'd0f2cd569d431efcf62f5409cea56fd7',
-};
-
 var orderId, transactionId;
-module.exports = function voidSuite() {
+
+function captureSuite(credentials) {
 	beforeEach(function beforeEach(done) {
 		orderId = uuid.v1();
 		var payload = {
@@ -114,4 +110,8 @@ module.exports = function voidSuite() {
 			done();
 		});
 	});
+}
+
+module.exports = function(credentials) {
+	return captureSuite.bind(this, credentials);
 };

@@ -1,13 +1,9 @@
 var expect = require('chai').expect;
 var amex = require('gateway/amex');
 
-var credentials = {
-	merchantId: 'TEST9353874515',
-	password: 'd0f2cd569d431efcf62f5409cea56fd7',
-};
-
 var token = '345678156470007';
-module.exports = function getTokenSuite() {
+
+function getTokenSuite(credentials) {
 	it('Get card token', function test(done) {
 		amex.getToken(token, credentials, function(err, body) {
 			expect(err).to.not.exist;
@@ -26,4 +22,8 @@ module.exports = function getTokenSuite() {
 			done();
 		});
 	});
+}
+
+module.exports = function(credentials) {
+	return getTokenSuite.bind(this, credentials);
 };

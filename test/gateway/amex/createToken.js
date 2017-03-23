@@ -1,12 +1,7 @@
 var expect = require('chai').expect;
 var amex = require('gateway/amex');
 
-var credentials = {
-	merchantId: 'TEST9353874515',
-	password: 'd0f2cd569d431efcf62f5409cea56fd7',
-};
-
-module.exports = function createTokenSuite() {
+function createTokenSuite(credentials) {
 	it('Create card token', function test(done) {
 		var payload = {
 			sourceOfFunds: {
@@ -33,4 +28,8 @@ module.exports = function createTokenSuite() {
 			done();
 		});
 	});
+}
+
+module.exports = function(credentials) {
+	return createTokenSuite.bind(this, credentials);
 };

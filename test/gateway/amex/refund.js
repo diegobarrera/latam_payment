@@ -2,13 +2,9 @@ var expect = require('chai').expect;
 var uuid = require('node-uuid');
 var amex = require('gateway/amex');
 
-var credentials = {
-	merchantId: 'TEST9353874515',
-	password: 'd0f2cd569d431efcf62f5409cea56fd7',
-};
-
 var orderId;
-module.exports = function refundSuite() {
+
+function refundSuite(credentials) {
 	beforeEach(function beforeEach(done) {
 		orderId = uuid.v1();
 		var payload = {
@@ -129,4 +125,8 @@ module.exports = function refundSuite() {
 			done();
 		});
 	});
+}
+
+module.exports = function(credentials) {
+	return refundSuite.bind(this, credentials);
 };

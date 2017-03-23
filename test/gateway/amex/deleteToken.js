@@ -7,7 +7,8 @@ var credentials = {
 };
 
 var token;
-module.exports = function deleteTokenSuite() {
+
+function deleteTokenSuite(credentials) {
 	beforeEach(function beforEach(done) {
 		var payload = {
 			sourceOfFunds: {
@@ -48,4 +49,8 @@ module.exports = function deleteTokenSuite() {
 			done();
 		});
 	});
+}
+
+module.exports = function(credentials) {
+	return deleteTokenSuite.bind(this, credentials);
 };
