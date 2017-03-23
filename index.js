@@ -1,5 +1,6 @@
 'use strict';
 
+var amex = require('./gateway/amex.js');
 var payU = require('./gateway/payu.js');
 var stripe = require('./gateway/stripe.js');
 
@@ -100,6 +101,34 @@ LatamPayment.prototype.register = function(type, user_data, cb) {
 					});
 				});
 			}
+		} else if (type === "amex") {
+			var getAmexResponse = function(body) {
+				return {
+					token: body.token,
+					last4: body.sourceOfFunds.provided.card.number.slice(-4),
+					cardType: body.sourceOfFunds.provided.card.brand,
+					maskedNumber: body.sourceOfFunds.provided.card.number,
+					uniqueNumberIdentifier: body.token,
+					customer: null,
+					country: user_data.metadata.country,
+					type: type,
+					csv: null,
+				};
+			};
+			var credentials = user_data.security;
+			var tokenId = user_data.card;
+			amex.getToken(tokenId, credentials, function(err, body) {
+				if (err) {
+					self.response.success = false;
+					self.response.error = err.explanation;
+					self.response.body = {};
+				} else {
+					self.response.error = false;
+					self.response.success = true;
+					self.response.body = getAmexResponse(body);
+				}
+				cb(err, self.response);
+			});
 		} else {
 			throw new Error("Type is not supported");
 		}
