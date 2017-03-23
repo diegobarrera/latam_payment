@@ -9,6 +9,7 @@ var createTokenSuite = require('./createToken')(credentials);
 var deleteTokenSuite = require('./deleteToken')(credentials);
 var getTokenSuite = require('./getToken')(credentials);
 var getGatewayInfoSuite = require('./getGatewayInfo');
+var paySuite = require('./pay')(credentials);
 var refundSuite = require('./refund')(credentials);
 var voidSuite = require('./void')(credentials);
 
@@ -20,5 +21,6 @@ module.exports = function describeAmex() {
 	describe('authorize', authorizeSuite);
 	describe('void', voidSuite);
 	describe('capture', captureSuite);
+	describe('pay', paySuite);
 	describe('refund', refundSuite);
 };
