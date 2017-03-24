@@ -241,6 +241,51 @@ LatamPayment.prototype.tokenize = function(type, user_data, cb) {
 				self.response.body.card = card_token;
 				cb(err, self.response);
 			});
+		} else if (type === 'amex') {
+			var getAmexResponse = function(body) {
+				return {
+					token: body.token,
+					last4: body.sourceOfFunds.provided.card.number.slice(-4),
+					cardType: body.sourceOfFunds.provided.card.brand,
+					maskedNumber: body.sourceOfFunds.provided.card.number,
+					uniqueNumberIdentifier: body.token,
+					customer: null,
+					country: user_data.metadata.country,
+					type: type,
+					csv: null,
+				};
+			};
+			var credentials = user_data.security;
+			var payload = {
+				sourceOfFunds: {
+					provided: {
+						card: {
+							expiry: {
+								month: user_data.card.exp_month,
+								year: user_data.card.exp_year,
+							},
+							number: user_data.card.number,
+							securityCode: user_data.card.securityCode,
+						},
+					},
+					type: 'CARD',
+				},
+				transaction: {
+					currency: user_data.card.currency || 'USD',
+				},
+			};
+			amex.createToken(payload, credentials, function(err, card_token) {
+				if (err) {
+					self.response.error = err;
+					self.response.success = false;
+					self.response.body = {};
+				} else {
+					self.response.error = null;
+					self.response.success = true;
+					self.response.body = getAmexResponse(card_token);
+				}
+				cb(err, self.response);
+			});
 		} else {
 			throw "Type is not supported.";
 		}

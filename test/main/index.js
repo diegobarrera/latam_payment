@@ -6,3 +6,4 @@ var credentials = {
 };
 
 module.exports.registerSuite = require('./register')(credentials);
+module.exports.tokenizeSuite = require('./tokenize')(credentials);
