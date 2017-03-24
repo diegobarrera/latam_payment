@@ -3,7 +3,7 @@ var latam_payment = require('index.js');
 
 function registerAmex(credentials) {
 	var token = '345678156470007';
-	it('Correct', function test(done) {
+	it('Correct amex', function test(done) {
 		var data = {
 			email: 'some_email@test.com',
 			metadata: {
@@ -23,7 +23,7 @@ function registerAmex(credentials) {
 			done();
 		});
 	});
-	it('Token not found', function test(done) {
+	it('Token not found amex', function test(done) {
 		var data = {
 			email: 'some_email@test.com',
 			metadata: {
@@ -47,6 +47,6 @@ function registerAmex(credentials) {
 
 module.exports = function(credentials) {
 	return function registerSuite() {
-		describe('amex', registerAmex.bind(this, credentials.amex));
+		registerAmex.bind(this)(credentials.amex);
 	};
 };
