@@ -201,6 +201,52 @@ LatamPayment.prototype.checkout = function(type, user_data, cb) {
 				}
 				cb(err, self.response);
 			});
+		} else if (type === "amex") { // use Amex
+			var getAmexResponse = function(body) {
+				var status;
+				if (body.order.status === 'CAPTURED') {
+					status = 'paid';
+				} else if (body.order.status === 'AUTHORIZED') {
+					status = 'authorized';
+				} else {
+					status = body.order.status.toLowerCase();
+				}
+				return {
+					orderId: body.order.id,
+					transaction: body.transaction.id,
+					status: status,
+					amount: body.transaction.amount,
+					currency: body.transaction.currency,
+				};
+			};
+			var action = user_data.payment.mode === 'capture' ? 'pay' : 'authorize';
+			var orderId = user_data.payment.orderId;
+			var payload = {
+				email: user_data.email,
+				payment: {
+					internal_reference: user_data.payment.internal_reference,
+					amount: user_data.payment.amount,
+					currency: user_data.payment.currency,
+					source: {
+						card: user_data.payment.source.card,
+					},
+				},
+				metadata: user_data.metadata,
+				address: user_data.address,
+			};
+			var credentials = user_data.security;
+			amex[action](orderId, payload, credentials, function(err, body) {
+				if (err) {
+					self.response.success = false;
+					self.response.error = err.explanation;
+					self.response.body = {};
+				} else {
+					self.response.error = false;
+					self.response.success = true;
+					self.response.body = getAmexResponse(body);
+				}
+				cb(err, self.response);
+			});
 		} else {
 			throw "Type is not supported.";
 		}
