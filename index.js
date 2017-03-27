@@ -361,6 +361,22 @@ LatamPayment.prototype.void = function(type, user_data, cb) {
 				};
 				cb(err, self.response);
 			});
+		} else if (type === "amex") {
+			var credentials = user_data.security;
+			var orderId = user_data.transaction.order_id;
+			var targetTransactionId = user_data.transaction.transaction_id;
+			amex.void(orderId, targetTransactionId, credentials, function(err, result) {
+				if (err) {
+					self.response.error = err;
+					self.response.success = false;
+					self.response.body = {};
+				} else {
+					self.response.error = null;
+					self.response.success = true;
+					self.response.body = {};
+				}
+				cb(err, self.response);
+			});
 		} else {
 			throw "Type is not supported.";
 		}

@@ -8,3 +8,4 @@ var credentials = {
 module.exports.registerSuite = require('./register')(credentials);
 module.exports.tokenizeSuite = require('./tokenize')(credentials);
 module.exports.checkoutSuite = require('./checkout')(credentials);
+module.exports.voidSuite = require('./void')(credentials);
