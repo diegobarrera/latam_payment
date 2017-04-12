@@ -183,6 +183,52 @@ LatamPayment.prototype.checkout = function(type, user_data, cb) {
 	}
 };
 
+LatamPayment.prototype.remove = function(type, user_data, cb) {
+	var self = this;
+	try {
+		var credentials = user_data.security;
+		var payload = user_data.source;
+		if (type === "payu") {
+			payU.delete_payment_method(user_data.url, payload, credentials, function(err, body) {
+				if (err) {
+					self.response.success = false;
+					self.response.error = err.message;
+					self.response.body = {};
+				} else {
+					self.response.success = true;
+					self.response.error = false;
+					self.response.body = {
+						token: body.creditCardToken.creditCardTokenId,
+					};
+				}
+				cb(err, self.response);
+			})
+		} else if (type === "stripe") {
+			stripe.delete_payment_method(payload, credentials, function(err, body) {
+				if (err || !body.deleted) {
+					self.response.success = false;
+					self.response.error = err ? err.message : "Card not deleted";
+					self.response.body = {};
+				} else {
+					self.response.success = true;
+					self.response.error = false;
+					self.response.body = {
+						token: body.id,
+					};
+				}
+				cb(err, self.response);
+			});
+		} else {
+			throw new Error("Type is not supported.");
+		}
+	} catch (err) {
+		self.response.success = false;
+		self.response.error = err.message;
+		self.response.body = {};
+		cb(err, self.response);
+	}
+};
+
 LatamPayment.prototype.tokenize = function(type, user_data, cb) {
 	var self = this;
 	try {
