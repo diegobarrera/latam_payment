@@ -254,10 +254,10 @@ module.exports.sale = function(payload, credentials, type, cb) {
 				return cb(error, body.transactionResponse);
 			}
 			error = error || new Error('');
-			if(body && body.error) {
+			if (body && body.error) {
 				error.message = error.message + " " + body.error;
 			}
-			if(body && body.transactionResponse) {
+			if (body && body.transactionResponse) {
 				error.message = error.message + " " + body.transactionResponse.responseCode;
 			}
 			error.message = error.message.trim();
@@ -266,10 +266,11 @@ module.exports.sale = function(payload, credentials, type, cb) {
 	});
 };
 
-module.exports.void = function(order_id, transaction_id, country, cb) {
-	process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+module.exports.void = function(payload, credentials, cb) {
+	var url = payload.security.url;
+	var country = (payload.metadata.country === 'COL') ? 'CO' : 'AR';
 	request({
-		url: config.payu[country].urlpaymentsApi,
+		url: url,
 		method: 'POST',
 		json: true,
 		headers: {
@@ -279,19 +280,24 @@ module.exports.void = function(order_id, transaction_id, country, cb) {
 		body: {
 			'language': 'es',
 			'command': 'SUBMIT_TRANSACTION',
-			'merchant': get_gateway(country),
+			'merchant': credentials,
 			'transaction': {
 				'order': {
-					'id': order_id
+					'id': payload.transaction.order_id
 				},
 				'type': 'VOID',
 				'reason': 'Return for verification',
-				'parentTransactionId': transaction_id
+				'parentTransactionId': payload.transaction.transaction_id
 			},
-			'test': config.payu[country].test
+			'test': false
 		}
-	}, function(error, response, body) {
-		cb(error, body);
+	}, function(err, response, body) {
+		if (body && body.code === 'SUCCESS') {
+			cb(err, body);
+		} else {
+			err = err + " " + body.error;
+			cb(err, null);
+		}
 	});
 };
 

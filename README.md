@@ -155,13 +155,56 @@ latam_payment.checkout(type, data, function(err, transaction){
 ```
 
 #### Checkout response
+**NOTE:** `orderId` is null for Stripe transactions.
 ```json
 {
   "success": true,
   "error": null,
   "body": {
+    "orderId": "<payuOrderId>",
     "transaction": "<transaction id>",
-    "status": "paid|authorized"
+    "status": "paid|authorized",
+    "amount": 500
+  }
+}
+```
+
+
+##Void
+####PayU void example
+```javascript
+var type = "payu";
+var data = {
+  metadata: {
+    id: '123456789', // user id
+    first_name: 'John',
+    last_name: 'Doe',
+    phone: '123456789',
+    country: 'COL',
+    city: 'BOG'
+  },
+  transaction: {
+    transaction_id: '96535b36-99db-4c66-bd87-6ad5c59b25a8',
+    order_id: '40049920'
+  },
+  security: {
+    url: 'https://sandbox.api.payulatam.com/payments-api/4.0/service.cgi',
+    api_key: '4Vj8eK4rloUd272L48hsrarnUA',
+    api_login: 'pRRXKOl8ikMmt9u',
+  }
+};
+
+latam_payment.void(type, data, function(err, transaction) {
+  // do something with transaction
+});
+```
+
+#### void response
+```json
+{
+  "success": true,
+  "error": null,
+  "body": {
   }
 }
 ```

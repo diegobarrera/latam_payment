@@ -47,7 +47,7 @@ LatamPayment.prototype.register = function(type, user_data, cb) {
 				cb(err, self.response);
 			});
 		} else if (type === "stripe") { // use Stripe
-			function getStripeResponse(card_token) {
+			var getStripeResponse = function(card_token) {
 				return {
 					token: card_token.id,
 					last4: card_token.last4,
@@ -59,7 +59,7 @@ LatamPayment.prototype.register = function(type, user_data, cb) {
 					type: type,
 					csv: null,
 				};
-			}
+			};
 			user_data.source = user_data.card;
 			var security = user_data.security;
 			if (user_data.user_token) {
@@ -114,6 +114,7 @@ LatamPayment.prototype.register = function(type, user_data, cb) {
 LatamPayment.prototype.checkout = function(type, user_data, cb) {
 	var self = this;
 	try {
+		var amount = Number(Number(user_data.payment.amount).toFixed(2));
 		if (type === "payu") { // use PayU
 			var credentials = {
 				apiLogin: user_data.security.api_login,
@@ -132,8 +133,10 @@ LatamPayment.prototype.checkout = function(type, user_data, cb) {
 					self.response.success = true;
 					self.response.error = false;
 					self.response.body = {
+						orderId: body.orderId,
 						transaction: body.transactionId,
 						status: body.captured ? "paid" : "authorized",
+						amount: amount,
 					};
 				}
 				cb(err, self.response);
@@ -161,8 +164,10 @@ LatamPayment.prototype.checkout = function(type, user_data, cb) {
 					self.response.success = true;
 					self.response.error = false;
 					self.response.body = {
+						orderId: null,
 						transaction: body.id,
 						status: body.captured ? "paid" : "authorized",
+						amount: amount,
 					};
 				}
 				cb(err, self.response);
@@ -199,7 +204,7 @@ LatamPayment.prototype.remove = function(type, user_data, cb) {
 				cb(err, self.response);
 			})
 		} else if (type === "stripe") {
-			stripe.delete_payment_method(payload, credentials, function(err, body){
+			stripe.delete_payment_method(payload, credentials, function(err, body) {
 				if (err || !body.deleted) {
 					self.response.success = false;
 					self.response.error = err ? err.message : "Card not deleted";
@@ -224,7 +229,7 @@ LatamPayment.prototype.remove = function(type, user_data, cb) {
 	}
 };
 
-LatamPayment.prototype.tokenize = function(type, user_data, cb){
+LatamPayment.prototype.tokenize = function(type, user_data, cb) {
 	var self = this;
 	try {
 		if (type === "payu") { // use PayU
@@ -262,5 +267,37 @@ LatamPayment.prototype.tokenize = function(type, user_data, cb){
 		cb(err, self.response);
 	}
 };
+
+LatamPayment.prototype.void = function(type, user_data, cb) {
+	var self = this;
+	try {
+		if (type === "payu") { // use PayU
+			var credentials = {
+				apiLogin: user_data.security.api_login,
+				apiKey: user_data.security.api_key
+			};
+			var country = user_data.country || 'COL';
+			payU.void(user_data, credentials, function(err, transaction) {
+				if (err) {
+					self.response.error = err;
+					self.response.success = false;
+				}
+				self.response.body = {
+					//transaction: transaction
+				};
+				cb(err, self.response);
+			});
+		} else {
+			throw "Type is not supported.";
+		}
+	} catch (err) {
+		self.response.success = false;
+		self.response.error = err;
+		cb(err, self.response);
+	}
+};
+
+
+
 
 module.exports = new LatamPayment();
