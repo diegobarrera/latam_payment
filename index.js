@@ -1,5 +1,6 @@
 'use strict';
 
+var amex = require('./gateway/amex.js');
 var payU = require('./gateway/payu.js');
 var stripe = require('./gateway/stripe.js');
 
@@ -100,6 +101,34 @@ LatamPayment.prototype.register = function(type, user_data, cb) {
 					});
 				});
 			}
+		} else if (type === "amex") {
+			var getAmexResponse = function(body) {
+				return {
+					token: body.token,
+					last4: body.sourceOfFunds.provided.card.number.slice(-4),
+					cardType: body.sourceOfFunds.provided.card.brand,
+					maskedNumber: body.sourceOfFunds.provided.card.number,
+					uniqueNumberIdentifier: body.token,
+					customer: null,
+					country: user_data.metadata.country,
+					type: type,
+					csv: null,
+				};
+			};
+			var credentials = user_data.security;
+			var tokenId = user_data.card;
+			amex.getToken(tokenId, credentials, function(err, body) {
+				if (err) {
+					self.response.success = false;
+					self.response.error = err.explanation;
+					self.response.body = {};
+				} else {
+					self.response.error = false;
+					self.response.success = true;
+					self.response.body = getAmexResponse(body);
+				}
+				cb(err, self.response);
+			});
 		} else {
 			throw new Error("Type is not supported");
 		}
@@ -169,6 +198,52 @@ LatamPayment.prototype.checkout = function(type, user_data, cb) {
 						status: body.captured ? "paid" : "authorized",
 						amount: amount,
 					};
+				}
+				cb(err, self.response);
+			});
+		} else if (type === "amex") { // use Amex
+			var getAmexResponse = function(body) {
+				var status;
+				if (body.order.status === 'CAPTURED') {
+					status = 'paid';
+				} else if (body.order.status === 'AUTHORIZED') {
+					status = 'authorized';
+				} else {
+					status = body.order.status.toLowerCase();
+				}
+				return {
+					orderId: body.order.id,
+					transaction: body.transaction.id,
+					status: status,
+					amount: body.transaction.amount,
+					currency: body.transaction.currency,
+				};
+			};
+			var action = user_data.payment.mode === 'capture' ? 'pay' : 'authorize';
+			var orderId = user_data.payment.orderId;
+			var payload = {
+				email: user_data.email,
+				payment: {
+					internal_reference: user_data.payment.internal_reference,
+					amount: user_data.payment.amount,
+					currency: user_data.payment.currency,
+					source: {
+						card: user_data.payment.source.card,
+					},
+				},
+				metadata: user_data.metadata,
+				address: user_data.address,
+			};
+			var credentials = user_data.security;
+			amex[action](orderId, payload, credentials, function(err, body) {
+				if (err) {
+					self.response.success = false;
+					self.response.error = err.explanation;
+					self.response.body = {};
+				} else {
+					self.response.error = false;
+					self.response.success = true;
+					self.response.body = getAmexResponse(body);
 				}
 				cb(err, self.response);
 			});
@@ -258,6 +333,51 @@ LatamPayment.prototype.tokenize = function(type, user_data, cb) {
 				self.response.body.card = card_token;
 				cb(err, self.response);
 			});
+		} else if (type === 'amex') {
+			var getAmexResponse = function(body) {
+				return {
+					token: body.token,
+					last4: body.sourceOfFunds.provided.card.number.slice(-4),
+					cardType: body.sourceOfFunds.provided.card.brand,
+					maskedNumber: body.sourceOfFunds.provided.card.number,
+					uniqueNumberIdentifier: body.token,
+					customer: null,
+					country: user_data.metadata.country,
+					type: type,
+					csv: null,
+				};
+			};
+			var credentials = user_data.security;
+			var payload = {
+				sourceOfFunds: {
+					provided: {
+						card: {
+							expiry: {
+								month: user_data.card.exp_month,
+								year: user_data.card.exp_year,
+							},
+							number: user_data.card.number,
+							securityCode: user_data.card.securityCode,
+						},
+					},
+					type: 'CARD',
+				},
+				transaction: {
+					currency: user_data.card.currency || 'USD',
+				},
+			};
+			amex.createToken(payload, credentials, function(err, card_token) {
+				if (err) {
+					self.response.error = err;
+					self.response.success = false;
+					self.response.body = {};
+				} else {
+					self.response.error = null;
+					self.response.success = true;
+					self.response.body = getAmexResponse(card_token);
+				}
+				cb(err, self.response);
+			});
 		} else {
 			throw "Type is not supported.";
 		}
@@ -285,6 +405,22 @@ LatamPayment.prototype.void = function(type, user_data, cb) {
 				self.response.body = {
 					//transaction: transaction
 				};
+				cb(err, self.response);
+			});
+		} else if (type === "amex") {
+			var credentials = user_data.security;
+			var orderId = user_data.transaction.order_id;
+			var targetTransactionId = user_data.transaction.transaction_id;
+			amex.void(orderId, targetTransactionId, credentials, function(err, result) {
+				if (err) {
+					self.response.error = err;
+					self.response.success = false;
+					self.response.body = {};
+				} else {
+					self.response.error = null;
+					self.response.success = true;
+					self.response.body = {};
+				}
 				cb(err, self.response);
 			});
 		} else {

@@ -57,6 +57,30 @@ latam_payment.register(type, data, function(err, card){
 });
 ```
 
+#### Amex register example
+```javascript
+var type = 'amex';
+var data = {
+  email: 'some_email@test.com',
+  metadata: {
+    id: 'user id 1',
+    first_name: 'John',
+    last_name: 'Doe',
+    country: 'MEX',
+    city: 'MEX'
+  },
+  description: `Customer for some_email@test.com`,
+  card: '<amex token>',
+  security: {
+	merchantId: '<amex_merchant_id>',
+	password: '<amex_merchant_api_password>',
+  }
+};
+latam_payment.register(type, data, function(err, card){
+    // do something with card
+});
+```
+
 #### Register response
 ```json
 {
@@ -65,15 +89,15 @@ latam_payment.register(type, data, function(err, card){
     "cardType": "VISA",
     "maskedNumber": "****1234",
     "uniqueNumberIdentifier": "jkaslgjdakl328975",
-    "customer": "<stripe user token (null for PayU)>|null",
+    "customer": "<stripe user token> | null",
     "country": "MEX|COL|ARG",
-    "type": "payu|stripe",
+    "type": "payu|stripe|amex",
     "csv": "123|null"
 }
 ```
 
-##Checkout
-####PayU checkout example
+## Checkout
+#### PayU checkout example
 ```javascript
 var type = 'payu';
 var data = {
@@ -118,7 +142,7 @@ latam_payment.checkout(type, data, function(err, transaction){
 });
 ```
 
-####Stripe checkout example
+#### Stripe checkout example
 ```javascript
 var type = 'stripe';
 var data = {
@@ -154,6 +178,43 @@ latam_payment.checkout(type, data, function(err, transaction){
 });
 ```
 
+#### Amex checkout example
+```javascript
+var type = 'amex';
+var data = {
+  email: 'test@email.com',
+  payment: {
+    internal_reference: 'ABC12398',
+    amount: 500,
+    currency: 'MXN',
+    source: {
+      card: ''
+    },
+    mode: 'capture' // if equal to 'capture', sets capture=true; else, sets capture=false
+  },
+  metadata: {
+    id: '123456789',// user id
+    first_name: 'John',
+    last_name: 'Doe',
+    phone: '123456789',
+    country: 'MEX',
+    city: 'MEX'
+  },
+  address: {
+    line1: 'Avenida entre rios 256',
+    country: 'MEX',
+    city: 'MEX'
+  },
+  security: {
+	merchantId: '<amex_merchant_id>',
+	password: '<amex_merchant_api_password>',
+  }
+};
+latam_payment.checkout(type, data, function(err, transaction){
+    // do something with transaction
+});
+```
+
 #### Checkout response
 **NOTE:** `orderId` is null for Stripe transactions.
 ```json
@@ -161,17 +222,18 @@ latam_payment.checkout(type, data, function(err, transaction){
   "success": true,
   "error": null,
   "body": {
-    "orderId": "<payuOrderId>",
+    "orderId": "<order_id>",
     "transaction": "<transaction id>",
     "status": "paid|authorized",
-    "amount": 500
+    "amount": 500,
+    "currency": "MXN"
   }
 }
 ```
 
 
-##Void
-####PayU void example
+## Void
+#### PayU void example
 ```javascript
 var type = "payu";
 var data = {
@@ -199,7 +261,26 @@ latam_payment.void(type, data, function(err, transaction) {
 });
 ```
 
-#### void response
+#### Amex void example
+```javascript
+var type = "amex";
+var data = {
+  transaction: {
+    transaction_id: '96535b36-99db-4c66-bd87-6ad5c59b25a8',
+    order_id: '40049920'
+  },
+  security: {
+	merchantId: '<amex_merchant_id>',
+	password: '<amex_merchant_api_password>',
+  }
+};
+
+latam_payment.void(type, data, function(err, transaction) {
+  // do something with transaction
+});
+```
+
+#### Void response
 ```json
 {
   "success": true,
