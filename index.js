@@ -13,6 +13,48 @@ function LatamPayment() {
 	return this;
 }
 
+//Only available for AMEX
+LatamPayment.prototype.registerCreditCard = function(type, user_data, credentials, cb) {
+	var self = this;
+	try {
+		if (type === 'amex') {
+			var getAmexResponse = function(body) {
+				return {
+					token: body.token,
+					last4: body.sourceOfFunds.provided.card.number.slice(-4),
+					cardType: body.sourceOfFunds.provided.card.brand,
+					maskedNumber: body.sourceOfFunds.provided.card.number,
+					uniqueNumberIdentifier: body.token,
+					customer: null,
+					country: null,
+					type: type,
+					csv: null,
+				};
+			};
+			amex.createToken(user_data, credentials, function(err, card_token) {
+				if (err) {
+					self.response.error = err;
+					self.response.success = false;
+					self.response.body = {};
+				} else {
+					self.response.error = null;
+					self.response.success = true;
+					self.response.body = getAmexResponse(card_token);
+				}
+				cb(err, self.response);
+			});
+		} else {
+			throw new Error("Type is not supported");
+		}
+	} catch (err) {
+		self.response.success = false;
+		self.response.error = err.message;
+		self.response.body = {};
+		cb(err, self.response);
+	}
+};
+
+
 LatamPayment.prototype.register = function(type, user_data, cb) {
 	var self = this;
 	try {
