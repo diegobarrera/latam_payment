@@ -261,7 +261,8 @@ LatamPayment.prototype.checkout = function(type, user_data, cb) {
 					currency: body.transaction.currency,
 				};
 			};
-			var action = user_data.payment.mode === 'capture' ? 'pay' : 'authorize';
+			var paymentMode = user_data.payment.mode;
+			var action = amex.validateMode(paymentMode) ? paymentMode : 'authorize';
 			var orderId = user_data.payment.orderId;
 			var payload = {
 				email: user_data.email,

@@ -44,6 +44,9 @@ function handleResponse(err, res, body, cb) {
     }
 }
 
+module.exports.validateMode = function validateMode(mode) {
+    return _.includes(['capture', 'pay', 'authorize'], mode);
+};
 
 // GATEWAY INFO
 
