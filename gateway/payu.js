@@ -27,6 +27,40 @@ var cities_dictionary = function(country_code, cb) {
 	}
 };
 
+var defineCountry = function (countryCode) {
+	switch (countryCode) {
+		case 'COL':
+			return 'CO';
+			break;
+		case 'ARG':
+			return 'AR';
+			break;
+		case 'MEX':
+			return 'MX';
+			break;
+		default:
+			return 'CO';
+			break;
+	}
+}
+
+var defineCurrency = function (countryCode) {
+	switch (countryCode) {
+		case 'COL':
+			return 'COP';
+			break;
+		case 'ARG':
+			return 'ARS';
+			break;
+		case 'MEX':
+			return 'MXN';
+			break;
+		default:
+			return 'COP';
+			break;
+	}
+}
+
 var calculateMD5Hash = function(data, cb) {
 	var response = crypto.createHash('md5').update(data).digest("hex");
 	cb(response);
@@ -162,10 +196,10 @@ module.exports.delete_payment_method = function(url, payload, credentials, cb) {
 };
 
 module.exports.sale = function(payload, credentials, type, cb) {
-	var country = (payload.metadata.country === 'COL') ? 'CO' : 'AR';
+	var country = defineCountry(payload.metadata.country);
 	var refCode = payload.payment.internal_reference + moment(new Date()).format();
 	var description = 'payment';
-	var currency = payload.metadata.country === 'COL' ? 'COP' : 'ARS';
+	var currency = defineCurrency(payload.metadata.country);
 	var accountId = payload.security.account_id;
 	var microtime = payload.security.device_session_id + '~' + moment(new Date()).format();
 	var amount = Number(Number(payload.payment.amount).toFixed(2));
@@ -268,7 +302,7 @@ module.exports.sale = function(payload, credentials, type, cb) {
 
 module.exports.void = function(payload, credentials, cb) {
 	var url = payload.security.url;
-	var country = (payload.metadata.country === 'COL') ? 'CO' : 'AR';
+	var country = defineCountry(payload.metadata.country);
 	request({
 		url: url,
 		method: 'POST',
