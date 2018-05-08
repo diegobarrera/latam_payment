@@ -12,8 +12,8 @@ var get_gateway = function(country) {
 };
 
 
-var cities_dictionary = function(country_code, cb) {
-	switch (country_code) {
+var cities_dictionary = function(cityCode, cb) {
+	switch (cityCode) {
 		case "BOG":
 			return "Bogota";
 		case "MED":
@@ -23,7 +23,7 @@ var cities_dictionary = function(country_code, cb) {
 		case "BNA":
 			return "Buenos Aires";
 		default:
-			return "Bogota"
+			return cityCode;
 	}
 };
 
