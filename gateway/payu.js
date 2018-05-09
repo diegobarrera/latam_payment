@@ -12,7 +12,7 @@ var get_gateway = function(country) {
 };
 
 
-var cities_dictionary = function(cityCode, cb) {
+var cities_dictionary = function(cityCode) {
 	switch (cityCode) {
 		case "BOG":
 			return "Bogota";

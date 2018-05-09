@@ -476,4 +476,7 @@ LatamPayment.prototype.void = function(type, user_data, cb) {
 	}
 };
 
+
+
+
 module.exports = new LatamPayment();
