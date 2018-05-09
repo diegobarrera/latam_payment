@@ -119,7 +119,8 @@ var data = {
     last_name: 'Doe',
     phone: '123456789',
     country: 'ARG',
-    city: 'BNA'
+    city: 'BNA',
+    birthdate: 'AAAA-MM-DD'
   },
   address: {
     line1: 'Avenida entre rios 256',
