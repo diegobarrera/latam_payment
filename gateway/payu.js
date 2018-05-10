@@ -263,7 +263,7 @@ module.exports.sale = function(payload, credentials, type, cb) {
 			},
 		};
 		if (country === 'MX') {
-			body.payer.birthdate = (payload.metadata && payload.metadata.birthdate) ? payload.metadata.birthdate : '1990-05-25';
+			body.transaction.payer.birthdate = (payload.metadata && payload.metadata.birthdate) ? payload.metadata.birthdate : '1990-05-25';
 		}
 		if (payload.payment.cvc) {
 			body.transaction.creditCard = {
