@@ -22,6 +22,8 @@ var cities_dictionary = function(cityCode) {
 			return "Chia";
 		case "BNA":
 			return "Buenos Aires";
+		case "MEX":
+			return "Mexico D.F.";
 		default:
 			return cityCode;
 	}
@@ -233,7 +235,8 @@ module.exports.sale = function(payload, credentials, type, cb) {
 						shippingAddress: {
 							city: cities_dictionary(payload.address.city),
 							street1: payload.address.line1,
-							phone: payload.metadata.phone
+							phone: payload.metadata.phone,
+							country: country,
 						},
 						dniNumber: ''
 					}
@@ -245,7 +248,8 @@ module.exports.sale = function(payload, credentials, type, cb) {
 					billingAddress: {
 						city: cities_dictionary(payload.address.city),
 						street1: payload.address.line1,
-						phone: payload.metadata.phone
+						phone: payload.metadata.phone,
+						country: country,
 					},
 					dniNumber: ''
 				},
@@ -269,7 +273,13 @@ module.exports.sale = function(payload, credentials, type, cb) {
 			body.transaction.creditCard = {
 				securityCode: payload.payment.cvc
 			};
+		} else {
+			body.transaction.creditCard = {         
+				processWithoutCvv2: true,
+				securityCode: "000"
+		 	}
 		}
+		console.log(JSON.stringify(body));
 		request({
 			url: payload.security.url,
 			method: 'POST',
