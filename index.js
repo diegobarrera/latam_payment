@@ -14,11 +14,11 @@ function LatamPayment() {
 }
 
 //Only available for AMEX
-LatamPayment.prototype.registerCreditCard = function(type, user_data, credentials, cb) {
+LatamPayment.prototype.registerCreditCard = function (type, user_data, credentials, cb) {
 	var self = this;
 	try {
 		if (type === 'amex') {
-			var getAmexResponse = function(body) {
+			var getAmexResponse = function (body) {
 				return {
 					token: body.token,
 					last4: body.sourceOfFunds.provided.card.number.slice(-4),
@@ -31,7 +31,7 @@ LatamPayment.prototype.registerCreditCard = function(type, user_data, credential
 					csv: null,
 				};
 			};
-			amex.createToken(user_data, credentials, function(err, card_token) {
+			amex.createToken(user_data, credentials, function (err, card_token) {
 				if (err) {
 					self.response.error = err;
 					self.response.success = false;
@@ -55,7 +55,7 @@ LatamPayment.prototype.registerCreditCard = function(type, user_data, credential
 };
 
 
-LatamPayment.prototype.register = function(type, user_data, cb) {
+LatamPayment.prototype.register = function (type, user_data, cb) {
 	var self = this;
 	try {
 		if (type === "payu") { // use PayU
@@ -67,7 +67,7 @@ LatamPayment.prototype.register = function(type, user_data, cb) {
 				"creditCardTokenId": user_data.card
 			};
 			var url = user_data.security.url;
-			payU.inverse_tokenization(url, payload, credentials, function(err, card_info) {
+			payU.inverse_tokenization(url, payload, credentials, function (err, card_info) {
 				if (err) {
 					self.response.error = err;
 					self.response.success = false;
@@ -90,7 +90,7 @@ LatamPayment.prototype.register = function(type, user_data, cb) {
 				cb(err, self.response);
 			});
 		} else if (type === "stripe") { // use Stripe
-			var getStripeResponse = function(card_token) {
+			var getStripeResponse = function (card_token) {
 				return {
 					token: card_token.id,
 					last4: card_token.last4,
@@ -106,7 +106,7 @@ LatamPayment.prototype.register = function(type, user_data, cb) {
 			user_data.source = user_data.card;
 			var security = user_data.security;
 			if (user_data.user_token) {
-				stripe.addPaymentMethod(user_data, function(err, card_token) {
+				stripe.addPaymentMethod(user_data, function (err, card_token) {
 					if (err) {
 						self.response.success = false;
 						self.response.error = err.message;
@@ -119,7 +119,7 @@ LatamPayment.prototype.register = function(type, user_data, cb) {
 					cb(err, self.response);
 				});
 			} else {
-				stripe.createUser(user_data, function(err, user_token) {
+				stripe.createUser(user_data, function (err, user_token) {
 					if (err) {
 						self.response.success = false;
 						self.response.error = err.message;
@@ -129,7 +129,7 @@ LatamPayment.prototype.register = function(type, user_data, cb) {
 					user_data.user_token = user_token;
 					self.response.body.user = user_token;
 					user_data.security = security;
-					stripe.addPaymentMethod(user_data, function(err, card_token) {
+					stripe.addPaymentMethod(user_data, function (err, card_token) {
 						if (err) {
 							self.response.success = false;
 							self.response.error = err.message;
@@ -144,7 +144,7 @@ LatamPayment.prototype.register = function(type, user_data, cb) {
 				});
 			}
 		} else if (type === "amex") {
-			var getAmexResponse = function(body) {
+			var getAmexResponse = function (body) {
 				return {
 					token: body.token,
 					last4: body.sourceOfFunds.provided.card.number.slice(-4),
@@ -159,7 +159,7 @@ LatamPayment.prototype.register = function(type, user_data, cb) {
 			};
 			var credentials = user_data.security;
 			var tokenId = user_data.card;
-			amex.getToken(tokenId, credentials, function(err, body) {
+			amex.getToken(tokenId, credentials, function (err, body) {
 				if (err) {
 					self.response.success = false;
 					self.response.error = err.explanation;
@@ -182,7 +182,7 @@ LatamPayment.prototype.register = function(type, user_data, cb) {
 	}
 };
 
-LatamPayment.prototype.checkout = function(type, user_data, cb) {
+LatamPayment.prototype.checkout = function (type, user_data, cb) {
 	var self = this;
 	try {
 		var amount = Number(Number(user_data.payment.amount).toFixed(2));
@@ -195,7 +195,7 @@ LatamPayment.prototype.checkout = function(type, user_data, cb) {
 			if (user_data.security && !user_data.security.url) {
 				user_data.security.url = "https://sandbox.api.payulatam.com/payments-api/4.0/service.cgi";
 			}
-			payU.sale(user_data, credentials, payment_mode, function(err, body) {
+			payU.sale(user_data, credentials, payment_mode, function (err, body) {
 				if (err) {
 					self.response.success = false;
 					self.response.error = err.message;
@@ -226,7 +226,7 @@ LatamPayment.prototype.checkout = function(type, user_data, cb) {
 					api_key: user_data.security.api_key
 				}
 			};
-			stripe.sale(data, function(err, body) {
+			stripe.sale(data, function (err, body) {
 				if (err || body.status !== 'succeeded') {
 					self.response.success = false;
 					self.response.error = err.message;
@@ -244,7 +244,7 @@ LatamPayment.prototype.checkout = function(type, user_data, cb) {
 				cb(err, self.response);
 			});
 		} else if (type === "amex") { // use Amex
-			var getAmexResponse = function(body) {
+			var getAmexResponse = function (body) {
 				var status;
 				if (body.order.status === 'CAPTURED') {
 					status = 'paid';
@@ -278,7 +278,7 @@ LatamPayment.prototype.checkout = function(type, user_data, cb) {
 				address: user_data.address,
 			};
 			var credentials = user_data.security;
-			amex[action](orderId, payload, credentials, function(err, body) {
+			amex[action](orderId, payload, credentials, function (err, body) {
 				if (err) {
 					self.response.success = false;
 					self.response.error = err.explanation;
@@ -301,13 +301,13 @@ LatamPayment.prototype.checkout = function(type, user_data, cb) {
 	}
 };
 
-LatamPayment.prototype.remove = function(type, user_data, cb) {
+LatamPayment.prototype.remove = function (type, user_data, cb) {
 	var self = this;
 	try {
 		var credentials = user_data.security;
 		var payload = user_data.source;
 		if (type === "payu") {
-			payU.delete_payment_method(user_data.url, payload, credentials, function(err, body) {
+			payU.delete_payment_method(user_data.url, payload, credentials, function (err, body) {
 				if (err) {
 					self.response.success = false;
 					self.response.error = err.message;
@@ -322,7 +322,7 @@ LatamPayment.prototype.remove = function(type, user_data, cb) {
 				cb(err, self.response);
 			})
 		} else if (type === "stripe") {
-			stripe.delete_payment_method(payload, credentials, function(err, body) {
+			stripe.delete_payment_method(payload, credentials, function (err, body) {
 				if (err || !body.deleted) {
 					self.response.success = false;
 					self.response.error = err ? err.message : "Card not deleted";
@@ -347,7 +347,7 @@ LatamPayment.prototype.remove = function(type, user_data, cb) {
 	}
 };
 
-LatamPayment.prototype.tokenize = function(type, user_data, cb) {
+LatamPayment.prototype.tokenize = function (type, user_data, cb) {
 	var self = this;
 	try {
 		if (type === "payu") { // use PayU
@@ -368,7 +368,7 @@ LatamPayment.prototype.tokenize = function(type, user_data, cb) {
 				}
 			};
 			var country = user_data.country || 'COL';
-			payU.tokenize(url, data, country, function(err, card_token) {
+			payU.tokenize(url, data, country, function (err, card_token) {
 				if (err) {
 					self.response.error = err;
 					self.response.success = false;
@@ -377,7 +377,7 @@ LatamPayment.prototype.tokenize = function(type, user_data, cb) {
 				cb(err, self.response);
 			});
 		} else if (type === 'amex') {
-			var getAmexResponse = function(body) {
+			var getAmexResponse = function (body) {
 				return {
 					token: body.token,
 					last4: body.sourceOfFunds.provided.card.number.slice(-4),
@@ -409,7 +409,7 @@ LatamPayment.prototype.tokenize = function(type, user_data, cb) {
 					currency: user_data.card.currency || 'USD',
 				},
 			};
-			amex.createToken(payload, credentials, function(err, card_token) {
+			amex.createToken(payload, credentials, function (err, card_token) {
 				if (err) {
 					self.response.error = err;
 					self.response.success = false;
@@ -431,7 +431,7 @@ LatamPayment.prototype.tokenize = function(type, user_data, cb) {
 	}
 };
 
-LatamPayment.prototype.void = function(type, user_data, cb) {
+LatamPayment.prototype.void = function (type, user_data, cb) {
 	var self = this;
 	try {
 		if (type === "payu") { // use PayU
@@ -440,7 +440,7 @@ LatamPayment.prototype.void = function(type, user_data, cb) {
 				apiKey: user_data.security.api_key
 			};
 			var country = user_data.country || 'COL';
-			payU.void(user_data, credentials, function(err, transaction) {
+			payU.void(user_data, credentials, function (err, transaction) {
 				if (err) {
 					self.response.error = err;
 					self.response.success = false;
@@ -454,7 +454,7 @@ LatamPayment.prototype.void = function(type, user_data, cb) {
 			var credentials = user_data.security;
 			var orderId = user_data.transaction.order_id;
 			var targetTransactionId = user_data.transaction.transaction_id;
-			amex.void(orderId, targetTransactionId, credentials, function(err, result) {
+			amex.void(orderId, targetTransactionId, credentials, function (err, result) {
 				if (err) {
 					self.response.error = err;
 					self.response.success = false;
