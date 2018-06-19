@@ -12,8 +12,8 @@ var get_gateway = function(country) {
 };
 
 
-var cities_dictionary = function(country_code, cb) {
-	switch (country_code) {
+var cities_dictionary = function(cityCode) {
+	switch (cityCode) {
 		case "BOG":
 			return "Bogota";
 		case "MED":
@@ -22,10 +22,40 @@ var cities_dictionary = function(country_code, cb) {
 			return "Chia";
 		case "BNA":
 			return "Buenos Aires";
+		case "MEX":
+			return "Mexico D.F.";
 		default:
-			return "Bogota"
+			return cityCode;
 	}
 };
+
+var defineCountry = function(countryCode) {
+    switch (countryCode) {
+        case 'COL':
+            return {
+                code: 'CO',
+                currency: 'COP'
+            };
+            break;
+        case 'ARG':
+            return {
+                code: 'AR',
+                currency: 'ARS'
+            };
+            break;
+        case 'MEX':
+            return {
+                code: 'MX',
+                currency: 'MXN'
+            };
+            break;
+        default:
+            return {
+                code: 'CO',
+                currency: 'COP'
+            };
+    }
+}
 
 var calculateMD5Hash = function(data, cb) {
 	var response = crypto.createHash('md5').update(data).digest("hex");
@@ -162,10 +192,10 @@ module.exports.delete_payment_method = function(url, payload, credentials, cb) {
 };
 
 module.exports.sale = function(payload, credentials, type, cb) {
-	var country = (payload.metadata.country === 'COL') ? 'CO' : 'AR';
+	var country = defineCountry(payload.metadata.country).code;
 	var refCode = payload.payment.internal_reference + moment(new Date()).format();
 	var description = 'payment';
-	var currency = payload.metadata.country === 'COL' ? 'COP' : 'ARS';
+	var currency = defineCountry(payload.metadata.country).currency;
 	var accountId = payload.security.account_id;
 	var microtime = payload.security.device_session_id + '~' + moment(new Date()).format();
 	var amount = Number(Number(payload.payment.amount).toFixed(2));
@@ -205,7 +235,8 @@ module.exports.sale = function(payload, credentials, type, cb) {
 						shippingAddress: {
 							city: cities_dictionary(payload.address.city),
 							street1: payload.address.line1,
-							phone: payload.metadata.phone
+							phone: payload.metadata.phone,
+							country: country,
 						},
 						dniNumber: ''
 					}
@@ -217,7 +248,8 @@ module.exports.sale = function(payload, credentials, type, cb) {
 					billingAddress: {
 						city: cities_dictionary(payload.address.city),
 						street1: payload.address.line1,
-						phone: payload.metadata.phone
+						phone: payload.metadata.phone,
+						country: country,
 					},
 					dniNumber: ''
 				},
@@ -234,11 +266,20 @@ module.exports.sale = function(payload, credentials, type, cb) {
 				userAgent: payload.security.user_agent,
 			},
 		};
+		if (country === 'MX') {
+			body.transaction.payer.birthdate = (payload.metadata && payload.metadata.birthdate) ? payload.metadata.birthdate : '1990-05-25';
+		}
 		if (payload.payment.cvc) {
 			body.transaction.creditCard = {
 				securityCode: payload.payment.cvc
 			};
+		} else {
+			body.transaction.creditCard = {         
+				processWithoutCvv2: true,
+				securityCode: "000"
+		 	}
 		}
+		console.log(JSON.stringify(body));
 		request({
 			url: payload.security.url,
 			method: 'POST',
@@ -268,7 +309,7 @@ module.exports.sale = function(payload, credentials, type, cb) {
 
 module.exports.void = function(payload, credentials, cb) {
 	var url = payload.security.url;
-	var country = (payload.metadata.country === 'COL') ? 'CO' : 'AR';
+	var country = defineCountry(payload.metadata.country).code;
 	request({
 		url: url,
 		method: 'POST',
